@@ -23,31 +23,31 @@ import {
 
 export default function App() {
   // ==========================================
-  // 1. ESTADOS PRINCIPALES DE NAVEGACIÓN Y PERFIL
+  // 1. ESTADOS DE NAVEGACIÓN Y PERFIL DE USUARIO
   // ==========================================
-  const [activeTab, setActiveTab] = useState('welcome'); // Controla qué pantalla se muestra (welcome, diagnostic, roadmap, interview, ask)
-  const [profileType, setProfileType] = useState<string | null>(null); // Almacena si el usuario es 'junior' o 'reskill' (reconversión)
+  const [activeTab, setActiveTab] = useState('welcome'); // Controla la pantalla activa (welcome, diagnostic, roadmap, interview, ask)
+  const [profileType, setProfileType] = useState<string | null>(null); // Almacena si el usuario eligió 'junior' o 'reskill' (reconversión)
   
   // ==========================================
   // 2. ESTADOS DEL FORMULARIO DE DIAGNÓSTICO
   // ==========================================
-  const [targetRole, setTargetRole] = useState('frontend'); // Rol IT elegido por el usuario (frontend, backend, etc.)
-  const [techStack, setTechStack] = useState<string[]>([]); // Tecnologías que el usuario seleccionó que domina
-  const [englishLevel, setEnglishLevel] = useState('B1'); // Nivel de inglés del usuario
+  const [targetRole, setTargetRole] = useState('frontend'); // Rol IT al que aspira el usuario
+  const [techStack, setTechStack] = useState<string[]>([]); // Tecnologías seleccionadas por el usuario
+  const [englishLevel, setEnglishLevel] = useState('B1'); // Nivel de inglés profesional seleccionado
   const [experienceMonths, setExperienceMonths] = useState('0-6'); // Experiencia práctica acumulada
-  const [mainBlocker, setMainBlocker] = useState('cv'); // Principal obstáculo del usuario en la búsqueda de empleo
+  const [mainBlocker, setMainBlocker] = useState('cv'); // Principal obstáculo en su búsqueda laboral
 
   // ==========================================
   // 3. ESTADOS DEL SIMULADOR DE ENTREVISTAS
   // ==========================================
-  const [interviewRole, setInterviewRole] = useState('frontend'); // Especialidad de la entrevista técnica
-  const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0); // Índice de la pregunta actual del test
-  const [userAnswer, setUserAnswer] = useState(''); // Respuesta escrita por el usuario en la entrevista
-  const [interviewFeedback, setInterviewFeedback] = useState<any>(null); // Resultado y puntuación de la evaluación por IA simulada
-  const [isEvaluating, setIsEvaluating] = useState(false); // Indicador de carga mientras "evalúa" la respuesta
+  const [interviewRole, setInterviewRole] = useState('frontend'); // Rol de la entrevista técnica
+  const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0); // Índice de la pregunta actual
+  const [userAnswer, setUserAnswer] = useState(''); // Respuesta escrita por el usuario
+  const [interviewFeedback, setInterviewFeedback] = useState<any>(null); // Feedback generado tras evaluar la respuesta
+  const [isEvaluating, setIsEvaluating] = useState(false); // Estado de carga durante la evaluación simulada
 
   // ==========================================
-  // 4. ESTADOS DEL CHAT CON EL MENTOR
+  // 4. ESTADOS DEL CHAT CON EL MENTOR IT
   // ==========================================
   const [chatMessages, setChatMessages] = useState([
     {
@@ -55,22 +55,22 @@ export default function App() {
       text: '¡Hola! Soy tu mentor IT. Puedo responder dudas sobre cómo conseguir tu primer empleo, qué proyectos construir, pretensiones salariales o cómo superar filtros de reclutadores. ¿Qué quieres consultar hoy?'
     }
   ]);
-  const [chatInput, setChatInput] = useState(''); // Texto que el usuario escribe en el chat
-  const chatEndRef = useRef<HTMLDivElement>(null); // Referencia para hacer scroll automático al final del chat
+  const [chatInput, setChatInput] = useState(''); // Texto ingresado en el input del chat
+  const chatEndRef = useRef<HTMLDivElement>(null); // Referencia para auto-scroll al final del chat
 
-  // Efecto para desplazar el scroll del chat automáticamente hacia abajo al recibir mensajes
+  // Efecto para desplazar la vista automáticamente al último mensaje del chat
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
-  // Lista de tecnologías disponibles para marcar en el test diagnóstico
+  // Listado de tecnologías disponibles para marcar en el test
   const availableTech = [
     'JavaScript', 'TypeScript', 'React', 'Node.js', 'Python', 
     'Java', 'HTML/CSS', 'SQL', 'Git/GitHub', 'Docker', 
     'Tailwind CSS', 'Express', 'Spring Boot', 'Figma'
   ];
 
-  // Función para marcar o desmarcar tecnologías en el cuestionario
+  // Función para marcar o desmarcar tecnologías de forma interactiva
   const handleTechToggle = (tech: string) => {
     if (techStack.includes(tech)) {
       setTechStack(techStack.filter(t => t !== tech));
@@ -79,7 +79,7 @@ export default function App() {
     }
   };
 
-  // Base de datos interna con los roles IT, demandas de mercado, salarios y proyectos clave recomendados
+  // Base de datos de roles IT, demandas, salarios y proyectos clave recomendados
   const roleData: Record<string, any> = {
     frontend: {
       name: 'Frontend Developer',
@@ -123,7 +123,7 @@ export default function App() {
     }
   };
 
-  // Banco de preguntas técnicas y comportamentales para las entrevistas
+  // Banco de preguntas técnicas y comportamentales para entrevistas
   const interviewQuestions = [
     {
       id: 1,
@@ -162,10 +162,10 @@ export default function App() {
     }
   ];
 
-  // Filtra las preguntas según el rol seleccionado por el usuario en el simulador
+  // Filtra las preguntas según el rol seleccionado y perfil del usuario
   const filteredQuestions = interviewQuestions.filter(q => q.role === interviewRole || q.role === 'general' || (profileType === 'reskill' && q.role === 'reskill'));
 
-  // Simula la evaluación de la respuesta del usuario mediante IA
+  // Evalúa de manera simulada la respuesta de la entrevista introducida por el usuario
   const handleEvaluateAnswer = () => {
     if (!userAnswer.trim()) return;
     setIsEvaluating(true);
@@ -180,14 +180,14 @@ export default function App() {
     }, 1000);
   };
 
-  // Pasa a la siguiente pregunta del simulador de entrevistas
+  // Avanza a la siguiente pregunta del simulador
   const handleNextQuestion = () => {
     setUserAnswer('');
     setInterviewFeedback(null);
     setCurrentQuestionIdx((prev) => (prev + 1) % filteredQuestions.length);
   };
 
-  // Lógica de respuestas automáticas del asistente mentor virtual
+  // Gestiona el envío de preguntas y respuestas automáticas del bot mentor
   const handleSendChatMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatInput.trim()) return;
@@ -214,16 +214,13 @@ export default function App() {
     }, 800);
   };
 
-  // ==========================================
-  // RENDERIZADO VISUAL DE LA APLICACIÓN (UI)
-  // ==========================================
   return (
     <div className="flex h-screen bg-slate-900 text-slate-100 font-sans overflow-hidden">
       
       {/* BARRA LATERAL DE NAVEGACIÓN (Escritorio) */}
       <aside className="w-64 bg-slate-950 border-r border-slate-800 flex flex-col justify-between shrink-0 hidden md:flex">
         <div>
-          {/* Logo y título */}
+          {/* Logo y cabecera de la app */}
           <div className="p-5 border-b border-slate-800 flex items-center space-x-3">
             <div className="p-2 bg-indigo-600 rounded-lg text-white">
               <Compass className="w-5 h-5" />
@@ -234,7 +231,7 @@ export default function App() {
             </div>
           </div>
 
-          {/* Insignia de perfil seleccionado */}
+          {/* Insignia del perfil de usuario seleccionado */}
           {profileType && (
             <div className="mx-4 my-4 p-3 bg-slate-900 rounded-lg border border-slate-800 flex items-center justify-between">
               <div className="flex items-center space-x-2">
@@ -253,7 +250,7 @@ export default function App() {
             </div>
           )}
 
-          {/* Botones de navegación entre pestañas */}
+          {/* Opciones de menú principal */}
           <nav className="p-3 space-y-1">
             <button
               onClick={() => setActiveTab('welcome')}
@@ -307,7 +304,7 @@ export default function App() {
           </nav>
         </div>
 
-        {/* Pie de barra lateral con estado del mercado */}
+        {/* Pie de la barra lateral */}
         <div className="p-4 border-t border-slate-800 text-xs text-slate-500">
           <div className="flex items-center space-x-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -316,7 +313,7 @@ export default function App() {
         </div>
       </aside>
 
-      {/* CONTENEDOR PRINCIPAL DE CONTENIDO */}
+      {/* ÁREA DE CONTENIDO PRINCIPAL */}
       <main className="flex-1 flex flex-col overflow-hidden bg-slate-900">
 
         {/* Cabecera superior para dispositivos móviles */}
@@ -334,7 +331,9 @@ export default function App() {
           </div>
         </header>
 
+        {/* ========================================== */}
         {/* PANTALLA 1: BIENVENIDA Y SELECCIÓN DE PERFIL */}
+        {/* ========================================== */}
         {activeTab === 'welcome' && (
           <div className="flex-1 overflow-y-auto p-6 md:p-10 max-w-4xl mx-auto w-full">
             <div className="mb-8">
@@ -353,8 +352,8 @@ export default function App() {
               Paso 1: Selecciona tu punto de partida
             </h3>
 
-            {/* Tarjetas selectoras de perfil (Junior vs Reconversión) */}
             <div className="grid md:grid-cols-2 gap-5 mb-8">
+              {/* Tarjeta de Perfil Junior */}
               <div 
                 onClick={() => { setProfileType('junior'); setActiveTab('diagnostic'); }}
                 className={`p-6 rounded-xl border transition-all cursor-pointer relative ${
@@ -374,6 +373,7 @@ export default function App() {
                 </div>
               </div>
 
+              {/* Tarjeta de Perfil Reconversión Digital */}
               <div 
                 onClick={() => { setProfileType('reskill'); setActiveTab('diagnostic'); }}
                 className={`p-6 rounded-xl border transition-all cursor-pointer relative ${
@@ -393,10 +393,40 @@ export default function App() {
                 </div>
               </div>
             </div>
+
+            {/* Bloque explicativo de pilares */}
+            <div className="bg-slate-950 p-6 rounded-xl border border-slate-800">
+              <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">¿Cómo funciona esta plataforma?</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex items-start space-x-3">
+                  <div className="p-2 bg-slate-900 rounded text-indigo-400 mt-0.5">1</div>
+                  <div>
+                    <h5 className="text-xs font-bold text-slate-200">Test de Mercado</h5>
+                    <p className="text-xs text-slate-400 mt-0.5">Evaluamos tu stack técnico real frente a vacantes actuales.</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="p-2 bg-slate-900 rounded text-indigo-400 mt-0.5">2</div>
+                  <div>
+                    <h5 className="text-xs font-bold text-slate-200">Matriz & Portfolio</h5>
+                    <p className="text-xs text-slate-400 mt-0.5">Estrategia para cerrar lagunas y optimizar tu CV y GitHub.</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="p-2 bg-slate-900 rounded text-indigo-400 mt-0.5">3</div>
+                  <div>
+                    <h5 className="text-xs font-bold text-slate-200">Simulación Técnica</h5>
+                    <p className="text-xs text-slate-400 mt-0.5">Entrena preguntas de entrevistas con feedback estructurado.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* PANTALLA 2: DIAGNÓSTICO TÉCNICO */}
+        {/* ========================================== */}
+        {/* PANTALLA 2: DIAGNÓSTICO TÉCNICO Y DE PERFIL */}
+        {/* ========================================== */}
         {activeTab === 'diagnostic' && (
           <div className="flex-1 overflow-y-auto p-6 md:p-10 max-w-4xl mx-auto w-full">
             <div className="mb-6 flex justify-between items-center border-b border-slate-800 pb-4">
@@ -408,7 +438,7 @@ export default function App() {
             </div>
 
             <div className="space-y-8">
-              {/* Selección de rol objetivo */}
+              {/* Selección de Rol Objetivo */}
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-3">
                   1. ¿Hacia qué rol o especialización te orientas?
@@ -429,7 +459,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Selección múltiple de tecnologías */}
+              {/* Selección del Stack Tecnológico */}
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
                   2. Selecciona las tecnologías con las que ya has construido al menos un proyecto:
@@ -454,11 +484,78 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Botón para avanzar al plan de acción */}
+              {/* Nivel de inglés y Experiencia */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-3">
+                    3. Nivel de Inglés profesional
+                  </label>
+                  <select
+                    value={englishLevel}
+                    onChange={(e) => setEnglishLevel(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                  >
+                    <option value="A2">Básico (A2) - Leo documentación con ayuda</option>
+                    <option value="B1">Intermedio (B1) - Entiendo texto técnico y mantengo conversaciones breves</option>
+                    <option value="B2">Fluido Técnico (B2) - Puedo realizar entrevistas de trabajo completas en inglés</option>
+                    <option value="C1">Avanzado (C1/C2) - Sin limitaciones de idioma</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-3">
+                    4. Experiencia práctica acumulada
+                  </label>
+                  <select
+                    value={experienceMonths}
+                    onChange={(e) => setExperienceMonths(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                  >
+                    <option value="0-6">Solo proyectos académicos / Bootcamp (0 - 6 meses)</option>
+                    <option value="6-12">Proyectos personales avanzados + Prácticas (6 - 12 meses)</option>
+                    <option value="12+">Más de 1 año construyendo proyectos autónomos</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Mayor obstáculo actual */}
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-3">
+                  5. ¿Cuál es tu mayor obstáculo actual?
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setMainBlocker('cv')}
+                    className={`p-3 rounded-lg border text-xs text-left transition-all ${mainBlocker === 'cv' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-950 border-slate-800 text-slate-400'}`}
+                  >
+                    <span className="font-bold block text-sm mb-1">Filtro de CV</span>
+                    No me llaman para primeras entrevistas telefónicas.
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMainBlocker('technical')}
+                    className={`p-3 rounded-lg border text-xs text-left transition-all ${mainBlocker === 'technical' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-950 border-slate-800 text-slate-400'}`}
+                  >
+                    <span className="font-bold block text-sm mb-1">Prueba Técnica</span>
+                    Llego a entrevistas pero me bloquean las pruebas de código.
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMainBlocker('stack')}
+                    className={`p-3 rounded-lg border text-xs text-left transition-all ${mainBlocker === 'stack' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-950 border-slate-800 text-slate-400'}`}
+                  >
+                    <span className="font-bold block text-sm mb-1">Overwhelm Técnico</span>
+                    No sé qué tecnologías seguir aprendiendo ni en qué orden.
+                  </button>
+                </div>
+              </div>
+
+              {/* Botón de acción para generar el roadmap */}
               <div className="pt-4 flex justify-end">
                 <button
                   onClick={() => setActiveTab('roadmap')}
-                  className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs rounded-lg transition-colors flex items-center space-x-2"
+                  className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs rounded-lg transition-colors flex items-center space-x-2 shadow-lg"
                 >
                   <span>Generar Plan de Acción Personalizado</span>
                   <ArrowRight className="w-4 h-4" />
@@ -468,7 +565,9 @@ export default function App() {
           </div>
         )}
 
-        {/* PANTALLA 3: PLAN DE ACCIÓN Y ROADMAP */}
+        {/* ========================================== */}
+        {/* PANTALLA 3: PLAN DE ACCIÓN Y ROADMAP (CV)  */}
+        {/* ========================================== */}
         {activeTab === 'roadmap' && (
           <div className="flex-1 overflow-y-auto p-6 md:p-10 max-w-4xl mx-auto w-full">
             <div className="mb-6 flex justify-between items-center border-b border-slate-800 pb-4">
@@ -476,68 +575,307 @@ export default function App() {
                 <h2 className="text-xl font-bold text-white">Matriz de Recomendación Directa</h2>
                 <p className="text-xs text-slate-400">Plan estratégico ajustado a tus selecciones y demanda de mercado.</p>
               </div>
+              <button onClick={() => setActiveTab('diagnostic')} className="text-xs text-indigo-400 hover:underline">
+                <span>Ajustar respuestas</span>
+              </button>
             </div>
+
+            {/* Cabecera del rol objetivo */}
             <div className="bg-slate-950 p-6 rounded-xl border border-slate-800 mb-6">
-              <h3 className="text-2xl font-bold text-white">{roleData[targetRole].name}</h3>
-              <p className="text-xs text-slate-400 mt-1">Demanda: <span className="text-emerald-400 font-bold">{roleData[targetRole].marketDemand}</span> | Salario estimado: <span className="text-slate-200 font-bold">{roleData[targetRole].avgSalaryJunior}</span></p>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                <div>
+                  <span className="text-xs font-semibold text-indigo-400 uppercase tracking-wider">Rol Objetivo Seleccionado</span>
+                  <h3 className="text-2xl font-bold text-white">{roleData[targetRole].name}</h3>
+                </div>
+                <div className="flex space-x-4 text-xs">
+                  <div className="bg-slate-900 px-3 py-2 rounded border border-slate-800">
+                    <span className="text-slate-500 block">Demanda de Mercado</span>
+                    <span className="font-bold text-emerald-400">{roleData[targetRole].marketDemand}</span>
+                  </div>
+                  <div className="bg-slate-900 px-3 py-2 rounded border border-slate-800">
+                    <span className="text-slate-500 block">Rango Salarial Junior</span>
+                    <span className="font-bold text-slate-200">{roleData[targetRole].avgSalaryJunior}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Pilares: Puntos fuertes y Estrategia de CV */}
+            <div className="grid md:grid-cols-2 gap-6 mb-6">
+              <div className="bg-slate-950 p-5 rounded-xl border border-slate-800">
+                <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-4 flex items-center space-x-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span>Tus Puntos Fuertes Identificados</span>
+                </h4>
+                <ul className="space-y-2 mb-6">
+                  {techStack.length > 0 ? (
+                    techStack.map(t => (
+                      <li key={t} className="text-xs text-slate-300 flex items-center space-x-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                        <span>Base de conocimientos en <strong className="text-white">{t}</strong></span>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="text-xs text-slate-500 italic">No seleccionaste tecnologías. Te recomendamos comenzar por las imprescindibles.</li>
+                  )}
+                  {profileType === 'reskill' && (
+                    <li className="text-xs text-slate-300 flex items-center space-x-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                      <span>Experiencia laboral previa (Habilidades blandas y adaptabilidad).</span>
+                    </li>
+                  )}
+                  <li className="text-xs text-slate-300 flex items-center space-x-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    <span>Nivel de inglés {englishLevel} suficiente para consulta técnica.</span>
+                  </li>
+                </ul>
+
+                <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center space-x-2">
+                  <Zap className="w-4 h-4 text-amber-400" />
+                  <span>Prioridades Inmediatas para tu Stack</span>
+                </h4>
+                <div className="space-y-2">
+                  {roleData[targetRole].mustHave.map((req: string) => {
+                    const hasIt = techStack.some(t => req.toLowerCase().includes(t.toLowerCase()));
+                    return (
+                      <div key={req} className={`p-2 rounded text-xs flex justify-between items-center ${hasIt ? 'bg-slate-900/60 text-slate-400' : 'bg-amber-500/10 border border-amber-500/20 text-amber-300 font-medium'}`}>
+                        <span>{req}</span>
+                        <span>{hasIt ? '✓ Cubierto' : '⚠️ Prioritario'}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="bg-slate-950 p-5 rounded-xl border border-slate-800 flex flex-col justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-4 flex items-center space-x-2">
+                    <FileText className="w-4 h-4 text-indigo-400" />
+                    <span>Estrategia de CV & Proyecto Estrella</span>
+                  </h4>
+
+                  <div className="mb-4">
+                    <span className="text-xs text-slate-400 font-semibold block mb-1">Proyecto Imprescindible para Mostrar:</span>
+                    <div className="p-3 bg-indigo-950/30 border border-indigo-500/30 rounded-lg text-xs text-indigo-200 leading-relaxed">
+                      {roleData[targetRole].keyProject}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <span className="text-xs text-slate-400 font-semibold block">Reglas de Oro para tu CV Junior:</span>
+                    <div className="text-xs text-slate-300 space-y-2">
+                      <p className="flex items-start space-x-2">
+                        <span className="text-indigo-400 font-bold">1.</span>
+                        <span><strong>Links activos:</strong> Enlace a GitHub y Deploy arriba del todo.</span>
+                      </p>
+                      <p className="flex items-start space-x-2">
+                        <span className="text-indigo-400 font-bold">2.</span>
+                        <span><strong>Sin barras de porcentaje:</strong> Sustituye "JavaScript 70%" por los proyectos reales.</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-slate-900 flex justify-end">
+                  <button
+                    onClick={() => { setInterviewRole(targetRole); setActiveTab('interview'); }}
+                    className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-medium text-xs rounded-lg transition-colors flex justify-center items-center space-x-2"
+                  >
+                    <span>Pasar al Simulador de Entrevista</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Checklist semanal */}
+            <div className="bg-slate-950 p-5 rounded-xl border border-slate-800">
+              <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3">Checklist semanal de búsqueda activa</h4>
+              <div className="grid md:grid-cols-3 gap-3 text-xs">
+                <div className="p-3 bg-slate-900 rounded border border-slate-800">
+                  <span className="font-bold text-white block mb-1">LinkedIn Optimizado</span>
+                  <span className="text-slate-400">Titular claro enfocado a tu rol objetivo y tecnologías clave.</span>
+                </div>
+                <div className="p-3 bg-slate-900 rounded border border-slate-800">
+                  <span className="font-bold text-white block mb-1">Red de Contactos</span>
+                  <span className="text-slate-400">Conecta semanalmente con reclutadores técnicos y profesionales del sector.</span>
+                </div>
+                <div className="p-3 bg-slate-900 rounded border border-slate-800">
+                  <span className="font-bold text-white block mb-1">Práctica Diaria</span>
+                  <span className="text-slate-400">Dedica tiempo constante a ejercicios de lógica y desarrollo de tu portfolio.</span>
+                </div>
+              </div>
             </div>
           </div>
         )}
 
-        {/* PANTALLA 4: SIMULADOR DE ENTREVISTAS */}
+        {/* ========================================== */}
+        {/* PANTALLA 4: SIMULADOR DE ENTREVISTAS      */}
+        {/* ========================================== */}
         {activeTab === 'interview' && (
           <div className="flex-1 overflow-y-auto p-6 md:p-10 max-w-4xl mx-auto w-full">
-            <div className="mb-6 border-b border-slate-800 pb-4">
-              <h2 className="text-xl font-bold text-white">Simulador de Entrevista Técnica</h2>
-              <p className="text-xs text-slate-400">Entrena preguntas reales de procesos de selección.</p>
-            </div>
-            {filteredQuestions.length > 0 && (
-              <div className="bg-slate-950 p-6 rounded-xl border border-slate-800">
-                <h3 className="text-lg font-bold text-white mb-4">"{filteredQuestions[currentQuestionIdx].question}"</h3>
-                <textarea
-                  rows={4}
-                  value={userAnswer}
-                  onChange={(e) => setUserAnswer(e.target.value)}
-                  placeholder="Escribe aquí tu respuesta explicativa..."
-                  className="w-full bg-slate-900 border border-slate-800 rounded-lg p-3 text-xs text-slate-200 mb-4"
-                />
-                <button
-                  onClick={handleEvaluateAnswer}
-                  disabled={isEvaluating || !userAnswer.trim()}
-                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded-lg"
+            <div className="mb-6 flex justify-between items-center border-b border-slate-800 pb-4">
+              <div>
+                <h2 className="text-xl font-bold text-white">Simulador de Entrevista Técnica</h2>
+                <p className="text-xs text-slate-400">Entrena preguntas reales de procesos de selección y recibe feedback de estructura.</p>
+              </div>
+              <div className="flex space-x-2">
+                <select
+                  value={interviewRole}
+                  onChange={(e) => {
+                    setInterviewRole(e.target.value);
+                    setCurrentQuestionIdx(0);
+                    setInterviewFeedback(null);
+                    setUserAnswer('');
+                  }}
+                  className="bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-slate-200"
                 >
-                  {isEvaluating ? 'Evaluando...' : 'Evaluar Respuesta'}
-                </button>
+                  <option value="frontend">Frontend</option>
+                  <option value="backend">Backend</option>
+                </select>
+              </div>
+            </div>
+
+            {filteredQuestions.length > 0 ? (
+              <div className="space-y-6">
+                <div className="bg-slate-950 p-6 rounded-xl border border-slate-800">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="px-2.5 py-0.5 bg-indigo-500/10 text-indigo-400 text-xs font-semibold rounded border border-indigo-500/20">
+                      Pregunta {currentQuestionIdx + 1} de {filteredQuestions.length} — {filteredQuestions[currentQuestionIdx].type}
+                    </span>
+                    <button onClick={handleNextQuestion} className="text-xs text-slate-400 hover:text-white flex items-center space-x-1">
+                      <span>Saltar pregunta</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <h3 className="text-lg font-bold text-white mb-4">
+                    "{filteredQuestions[currentQuestionIdx].question}"
+                  </h3>
+
+                  <div className="mb-4">
+                    <label className="block text-xs font-semibold text-slate-400 mb-2">Escribe tu respuesta como si estuvieses respondiendo al reclutador:</label>
+                    <textarea
+                      rows={5}
+                      value={userAnswer}
+                      onChange={(e) => setUserAnswer(e.target.value)}
+                      placeholder="Escribe aquí tu respuesta explicativa..."
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-3 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 resize-none font-sans"
+                    />
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-slate-500">Consejo: Sé conciso, directo y utiliza ejemplos prácticos.</span>
+                    <button
+                      onClick={handleEvaluateAnswer}
+                      disabled={isEvaluating || !userAnswer.trim()}
+                      className={`px-5 py-2.5 rounded-lg text-xs font-medium flex items-center space-x-2 ${
+                        isEvaluating || !userAnswer.trim() ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md'
+                      }`}
+                    >
+                      {isEvaluating ? <span>Evaluando respuesta...</span> : <><Sparkles className="w-4 h-4" /><span>Evaluar Respuesta</span></>}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Panel de Feedback */}
+                {interviewFeedback && (
+                  <div className="bg-slate-950 p-6 rounded-xl border border-indigo-500/30">
+                    <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg font-bold text-sm">
+                          Puntuación: {interviewFeedback.score}%
+                        </div>
+                        <span className="text-xs font-bold text-white">Evaluación Estructurada</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4 text-xs">
+                      <div>
+                        <span className="font-bold text-slate-300 block mb-1">Aspectos Positivos:</span>
+                        <p className="text-slate-400">{interviewFeedback.strengths}</p>
+                      </div>
+                      <div>
+                        <span className="font-bold text-slate-300 block mb-1">Sugerencia de Mejora:</span>
+                        <p className="text-slate-400">{interviewFeedback.suggestions}</p>
+                      </div>
+                      <div>
+                        <span className="font-bold text-slate-300 block mb-2">Claves que debías incluir:</span>
+                        <ul className="space-y-1">
+                          {interviewFeedback.checklist.map((item: string, idx: number) => (
+                            <li key={idx} className="flex items-start space-x-2 text-slate-300">
+                              <span className="text-indigo-400 font-bold">•</span>
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 pt-3 border-t border-slate-900 flex justify-end">
+                      <button onClick={handleNextQuestion} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs rounded transition-colors flex items-center space-x-1">
+                        <span>Siguiente Pregunta</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="p-8 text-center bg-slate-950 rounded-xl border border-slate-800 text-xs text-slate-400">
+                No hay preguntas configuradas para este rol actualmente.
               </div>
             )}
           </div>
         )}
 
-        {/* PANTALLA 5: CHAT CON EL MENTOR */}
+        {/* ========================================== */}
+        {/* PANTALLA 5: CHAT CON EL MENTOR IT          */}
+        {/* ========================================== */}
         {activeTab === 'ask' && (
           <div className="flex-1 flex flex-col h-full max-w-4xl mx-auto w-full p-4 md:p-6 overflow-hidden">
-            <div className="pb-3 mb-3 border-b border-slate-800">
-              <h2 className="text-sm font-bold text-white">Consultas Directas al Mentor IT</h2>
+            <div className="pb-3 mb-3 border-b border-slate-800 flex items-center justify-between shrink-0">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-indigo-600/20 text-indigo-400 rounded-lg">
+                  <MessageSquare className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-white">Consultas Directas al Mentor IT</h2>
+                  <p className="text-xs text-slate-400">Respuestas directas sobre empleabilidad, cartas de presentación y negociación.</p>
+                </div>
+              </div>
             </div>
+
+            {/* Historial de mensajes */}
             <div className="flex-1 overflow-y-auto space-y-4 pr-2 mb-4">
               {chatMessages.map((msg, idx) => (
                 <div key={idx} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[75%] rounded-xl p-4 text-xs ${msg.sender === 'user' ? 'bg-indigo-600 text-white' : 'bg-slate-950 border border-slate-800 text-slate-200'}`}>
+                  <div className={`max-w-[85%] md:max-w-[75%] rounded-xl p-4 text-xs leading-relaxed ${
+                    msg.sender === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-slate-950 border border-slate-800 text-slate-200 rounded-bl-none'
+                  }`}>
+                    {msg.sender === 'bot' && (
+                      <div className="flex items-center space-x-1.5 text-indigo-400 font-bold mb-1.5">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Orientador IT</span>
+                      </div>
+                    )}
                     <p className="whitespace-pre-line">{msg.text}</p>
                   </div>
                 </div>
               ))}
               <div ref={chatEndRef} />
             </div>
+
+            {/* Formulario de entrada de chat */}
             <form onSubmit={handleSendChatMessage} className="shrink-0 flex gap-2">
               <input
                 type="text"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Pregunta sobre CV, salarios..."
-                className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-xs text-slate-200"
+                placeholder="Pregunta sobre CV, cartas de motivación, expectativas salariales..."
+                className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
               />
-              <button type="submit" className="px-5 bg-indigo-600 text-white rounded-lg">
+              <button type="submit" className="px-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors flex items-center justify-center">
                 <Send className="w-4 h-4" />
               </button>
             </form>
