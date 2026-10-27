@@ -18,9 +18,15 @@ import {
   LogOut, 
   Building2, 
   Plus, 
-  X, 
-  Check 
+  X,
+  Check,
+  Eye,
+  EyeOff,
+  LoaderCircle
 } from 'lucide-react';
+
+// Servicio de autenticación (demo hoy, Supabase en el futuro)
+import { authService } from './auth/authService';
 
 // Importación de Tipos e Interfaces
 import type { 
@@ -53,29 +59,26 @@ export default function App() {
 
   /**
    * Usuario actualmente autenticado.
-   * Se inicializa leyendo de LocalStorage para mantener la sesión tras recargar.
+   * Se recupera del servicio de autenticación al montar la app para mantener la sesión tras recargar.
    */
-  const [currentUser, setCurrentUser] = useState<UserSession | null>(() => {
-    try {
-      const savedSession = localStorage.getItem('it_orientador_current_user');
-      return savedSession ? JSON.parse(savedSession) : null;
-    } catch (error) {
-      console.error('Error leyendo la sesión del almacenamiento local:', error);
-      return null;
-    }
-  });
+  const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
+  const [isSessionLoading, setIsSessionLoading] = useState<boolean>(true);
 
-  // Modo de formulario en la modal de autenticación
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  
   // Rol seleccionado antes de completar la autenticación
   const [selectedRoleAuth, setSelectedRoleAuth] = useState<UserRole | null>(null);
 
-  // Inputs del formulario de login/registro
+  // Inputs y estado del formulario de login
   const [authEmail, setAuthEmail] = useState<string>('');
   const [authPassword, setAuthPassword] = useState<string>('');
-  const [authName, setAuthName] = useState<string>('');
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [isSubmittingAuth, setIsSubmittingAuth] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string>('');
+
+  useEffect(() => {
+    authService.getSession()
+      .then(setCurrentUser)
+      .finally(() => setIsSessionLoading(false));
+  }, []);
 
   // ============================================================================
   // 2. ESTADOS DEL PANEL DE JÓVENES
@@ -158,46 +161,51 @@ export default function App() {
   /**
    * Cierra la sesión activa y reinicia el estado global de la aplicación.
    */
-  const handleLogout = (): void => {
-    localStorage.removeItem('it_orientador_current_user');
+  const handleLogout = async (): Promise<void> => {
+    await authService.signOut();
     setCurrentUser(null);
     setSelectedRoleAuth(null);
     setAuthEmail('');
     setAuthPassword('');
-    setAuthName('');
+    setShowPassword(false);
     setAuthError('');
     setCompanySubmitted(false);
   };
 
   /**
-   * Procesa el inicio de sesión o registro de usuarios.
+   * Valida las credenciales contra el servicio de autenticación.
+   * El rol lo determina la cuenta; si no coincide con el perfil elegido se rechaza el acceso.
    */
-  const handleAuthSubmit = (e: React.FormEvent): void => {
+  const handleAuthSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     setAuthError('');
 
-    if (!authEmail.trim() || !authPassword.trim()) {
+    if (!authEmail.trim() || !authPassword) {
       setAuthError('Por favor introduce tu correo y contraseña.');
       return;
     }
 
-    if (authMode === 'register' && !authName.trim()) {
-      setAuthError('Por favor introduce tu nombre completo o el de tu organización.');
+    setIsSubmittingAuth(true);
+    const { user, error } = await authService.signIn(authEmail, authPassword);
+    setIsSubmittingAuth(false);
+
+    if (!user) {
+      setAuthError(error);
       return;
     }
 
-    const userSessionData: UserSession = {
-      email: authEmail.trim(),
-      role: selectedRoleAuth!,
-      name: authName.trim() || (selectedRoleAuth === 'young' ? 'Joven Talento' : 'Empresa')
-    };
-
-    try {
-      localStorage.setItem('it_orientador_current_user', JSON.stringify(userSessionData));
-      setCurrentUser(userSessionData);
-    } catch (error) {
-      setAuthError('No se pudo guardar la sesión localmente.');
+    if (user.role !== selectedRoleAuth) {
+      await authService.signOut();
+      setAuthError(
+        user.role === 'young'
+          ? 'Esta cuenta pertenece a un perfil de Jóvenes. Vuelve atrás y elige ese acceso.'
+          : 'Esta cuenta pertenece a un perfil de Empresa. Vuelve atrás y elige ese acceso.'
+      );
+      return;
     }
+
+    setAuthPassword('');
+    setCurrentUser(user);
   };
 
   // ============================================================================
@@ -339,6 +347,14 @@ export default function App() {
   // ============================================================================
   // RENDER: PANTALLA DE SELECCIÓN DE ROL / AUTENTICACIÓN
   // ============================================================================
+  if (isSessionLoading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <LoaderCircle className="w-6 h-6 text-indigo-400 animate-spin" />
+      </div>
+    );
+  }
+
   if (!currentUser) {
     return (
       <div className="min-h-screen bg-slate-900 text-slate-100 flex items-center justify-center p-4 font-sans">
@@ -364,7 +380,7 @@ export default function App() {
               
               {/* Tarjeta Jóvenes */}
               <div 
-                onClick={() => { setSelectedRoleAuth('young'); setAuthMode('login'); }}
+                onClick={() => setSelectedRoleAuth('young')}
                 className="bg-slate-950 border border-slate-800 hover:border-indigo-500/50 hover:bg-slate-950/80 p-8 rounded-2xl transition-all cursor-pointer group flex flex-col justify-between"
               >
                 <div>
@@ -378,14 +394,14 @@ export default function App() {
                   </p>
                 </div>
                 <div className="flex items-center text-indigo-400 text-xs font-bold space-x-2">
-                  <span>Acceder / Registrarse como Joven</span>
+                  <span>Acceder como Joven</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>
 
               {/* Tarjeta Empresa */}
               <div 
-                onClick={() => { setSelectedRoleAuth('company'); setAuthMode('login'); }}
+                onClick={() => setSelectedRoleAuth('company')}
                 className="bg-slate-950 border border-slate-800 hover:border-emerald-500/50 hover:bg-slate-950/80 p-8 rounded-2xl transition-all cursor-pointer group flex flex-col justify-between"
               >
                 <div>
@@ -399,7 +415,7 @@ export default function App() {
                   </p>
                 </div>
                 <div className="flex items-center text-emerald-400 text-xs font-bold space-x-2">
-                  <span>Acceder / Registrarse como Empresa</span>
+                  <span>Acceder como Empresa</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>
@@ -409,8 +425,8 @@ export default function App() {
             /* FORMULARIO DE INICIO DE SESIÓN / REGISTRO */
             <div className="max-w-md mx-auto bg-slate-950 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-2xl relative">
               
-              <button 
-                onClick={() => setSelectedRoleAuth(null)}
+              <button
+                onClick={() => { setSelectedRoleAuth(null); setAuthError(''); setAuthPassword(''); }}
                 className="absolute top-4 right-4 text-slate-500 hover:text-slate-300 text-xs flex items-center space-x-1"
               >
                 <X className="w-4 h-4" />
@@ -423,40 +439,26 @@ export default function App() {
                 }`}>
                   {selectedRoleAuth === 'young' ? 'Rol: Jóvenes / Talento' : 'Rol: Empresa / Organización'}
                 </span>
-                <h2 className="text-xl font-bold text-white">
-                  {authMode === 'login' ? 'Iniciar Sesión' : 'Crear nueva cuenta'}
-                </h2>
+                <h2 className="text-xl font-bold text-white">Iniciar Sesión</h2>
                 <p className="text-slate-400 text-xs mt-1">
                   Ingresa tus datos para acceder a tu panel exclusivo.
                 </p>
               </div>
 
               {authError && (
-                <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded text-red-400 text-xs">
+                <div role="alert" className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded text-red-400 text-xs">
                   {authError}
                 </div>
               )}
 
-              <form onSubmit={handleAuthSubmit} className="space-y-4">
-                {authMode === 'register' && (
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">
-                      {selectedRoleAuth === 'young' ? 'Nombre completo' : 'Nombre de la Organización'}
-                    </label>
-                    <input
-                      type="text"
-                      value={authName}
-                      onChange={(e) => setAuthName(e.target.value)}
-                      placeholder={selectedRoleAuth === 'young' ? 'Ej. Ana Martínez' : 'Ej. Tech Solutions S.L.'}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-3 text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
-                    />
-                  </div>
-                )}
-
+              <form onSubmit={handleAuthSubmit} className="space-y-4" noValidate>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Correo Electrónico</label>
+                  <label htmlFor="auth-email" className="block text-xs font-semibold text-slate-300 mb-1">Correo Electrónico</label>
                   <input
+                    id="auth-email"
                     type="email"
+                    autoComplete="username"
+                    autoFocus
                     value={authEmail}
                     onChange={(e) => setAuthEmail(e.target.value)}
                     placeholder="usuario@ejemplo.com"
@@ -465,42 +467,43 @@ export default function App() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Contraseña</label>
-                  <input
-                    type="password"
-                    value={authPassword}
-                    onChange={(e) => setAuthPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg p-3 text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
-                  />
+                  <label htmlFor="auth-password" className="block text-xs font-semibold text-slate-300 mb-1">Contraseña</label>
+                  <div className="relative">
+                    <input
+                      id="auth-password"
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="current-password"
+                      value={authPassword}
+                      onChange={(e) => setAuthPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg p-3 pr-10 text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(prev => !prev)}
+                      aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                      className="absolute inset-y-0 right-0 px-3 flex items-center text-slate-500 hover:text-slate-300"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <button
                   type="submit"
-                  className={`w-full py-3 rounded-lg text-xs font-bold text-white transition-colors shadow-lg ${
+                  disabled={isSubmittingAuth}
+                  className={`w-full py-3 rounded-lg text-xs font-bold text-white transition-colors shadow-lg flex items-center justify-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed ${
                     selectedRoleAuth === 'young' ? 'bg-indigo-600 hover:bg-indigo-500' : 'bg-emerald-600 hover:bg-emerald-500'
                   }`}
                 >
-                  {authMode === 'login' ? 'Ingresar a la Plataforma' : 'Completar Registro'}
+                  {isSubmittingAuth && <LoaderCircle className="w-4 h-4 animate-spin" />}
+                  <span>{isSubmittingAuth ? 'Comprobando…' : 'Ingresar a la Plataforma'}</span>
                 </button>
               </form>
 
-              <div className="mt-6 pt-4 border-t border-slate-900 text-center text-xs">
-                {authMode === 'login' ? (
-                  <p className="text-slate-400">
-                    ¿No tienes cuenta registrada?{' '}
-                    <button onClick={() => setAuthMode('register')} className="text-indigo-400 hover:underline font-semibold">
-                      Regístrate gratis
-                    </button>
-                  </p>
-                ) : (
-                  <p className="text-slate-400">
-                    ¿Ya tienes una cuenta?{' '}
-                    <button onClick={() => setAuthMode('login')} className="text-indigo-400 hover:underline font-semibold">
-                      Inicia Sesión
-                    </button>
-                  </p>
-                )}
+              <div className="mt-6 pt-4 border-t border-slate-900 text-center text-xs text-slate-400">
+                Versión demo: el acceso está limitado a cuentas preconfiguradas.
+                El registro de nuevos usuarios estará disponible próximamente.
               </div>
             </div>
           )}
