@@ -252,6 +252,14 @@ export default function App() {
     }, 1000);
   };
 
+  /** Cambia el puesto del simulador y empieza desde la primera pregunta. */
+  const changeInterviewRole = (role: string): void => {
+    setInterviewRole(role);
+    setCurrentQuestionIdx(0);
+    setInterviewFeedback(null);
+    setUserAnswer('');
+  };
+
   const handleNextQuestion = (): void => {
     setUserAnswer('');
     setInterviewFeedback(null);
@@ -729,7 +737,7 @@ export default function App() {
 
                   <button
                     type="button"
-                    onClick={() => { setInterviewRole(targetRole); setActiveTabYoung('interview'); }}
+                    onClick={() => { changeInterviewRole(targetRole); setActiveTabYoung('interview'); }}
                     className="btn btn-secondary w-full mt-auto"
                   >
                     Practicar una entrevista
@@ -769,16 +777,12 @@ export default function App() {
                     <select
                       id="interview-role"
                       value={interviewRole}
-                      onChange={(e) => {
-                        setInterviewRole(e.target.value);
-                        setCurrentQuestionIdx(0);
-                        setInterviewFeedback(null);
-                        setUserAnswer('');
-                      }}
+                      onChange={(e) => changeInterviewRole(e.target.value)}
                       className="input-technical w-auto"
                     >
-                      <option value="frontend">Frontend</option>
-                      <option value="backend">Backend</option>
+                      {Object.keys(ROLE_DATABASE).map(roleKey => (
+                        <option key={roleKey} value={roleKey}>{ROLE_DATABASE[roleKey].name}</option>
+                      ))}
                     </select>
                   </div>
                 }
