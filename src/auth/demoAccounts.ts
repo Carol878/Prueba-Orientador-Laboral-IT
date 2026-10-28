@@ -20,29 +20,31 @@ export interface DemoAccount {
   passwordHash: string;
 }
 
+export const DEMO_PASSWORD = '123456';
+
 export const DEMO_ACCOUNTS: DemoAccount[] = [
   {
     email: 'ana.martinez@demo.fad',
     name: 'Ana Martínez',
     role: 'young',
-    passwordHash: '04a5003698155683f020b27963bac225840e20aba9e4b8edbfd5031f47c7e141'
+    passwordHash: 'ebaa9d1f1a3e397d799d1e278fd7724c2b7edbe39b8c78cccf166ede690c95aa' // SHA-256(ana.martinez@demo.fad:123456)
   },
   {
     email: 'carlos.ruiz@demo.fad',
     name: 'Carlos Ruiz',
     role: 'young',
-    passwordHash: 'c1cadcbb5c097376cad1883590437a1d49f4751917f30279040a2747c16eb815'
+    passwordHash: 'df8775f01284417140486a4bc85a7d7fdcc48aba31f058bdaa7d8d681c38dc54' // SHA-256(carlos.ruiz@demo.fad:123456)
   },
   {
     email: 'rrhh@techsolutions.demo',
     name: 'Tech Solutions S.L.',
     role: 'company',
-    passwordHash: 'c913e81830fbf952d95d14423b7dcaed873f08f3fefe2856d651f3662cb8becd'
+    passwordHash: 'd73f6077593f8449edd32e0c6a17fd3f287ff93ae36277366cad720aa9266c6d' // SHA-256(rrhh@techsolutions.demo:123456)
   },
   {
     email: 'talento@innovadata.demo',
     name: 'InnovaData',
     role: 'company',
-    passwordHash: 'c6e476a013044793dedcd535735a49f3e04e9279e461dc5faa2f636055bab547'
+    passwordHash: '388663bade42ae1d9c679736195e9827eec41963d2dad7fcf6bda455783dae4b' // SHA-256(talento@innovadata.demo:123456)
   }
 ];
