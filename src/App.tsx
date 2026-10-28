@@ -38,6 +38,7 @@ import TrainingRecommender from './components/training/TrainingRecommender';
 
 // Comparación de tecnologías con los requisitos del puesto
 import { coversRequirement } from './lib/skillMatch';
+import { scoreAnswer } from './lib/answerScore';
 
 // Scroll suave (Lenis)
 import { scrollToTop, useSmoothScroll } from './lib/smoothScroll';
@@ -235,12 +236,18 @@ export default function App() {
     setIsEvaluating(true);
 
     setTimeout(() => {
+      const keyPoints = filteredQuestions[currentQuestionIdx]?.keyPoints || [];
+      const { score, covered, missing } = scoreAnswer(userAnswer, keyPoints);
       setIsEvaluating(false);
       setInterviewFeedback({
-        score: Math.floor(Math.random() * 25) + 75,
-        strengths: 'Has ordenado bien tu respuesta y has usado los términos técnicos adecuados.',
-        suggestions: 'Añade ejemplos concretos de proyectos que hayas hecho para que tu explicación tenga más peso.',
-        checklist: filteredQuestions[currentQuestionIdx]?.keyPoints || []
+        score,
+        strengths: covered.length > 0
+          ? `Mencionas ${covered.length} de las ${keyPoints.length} ideas clave que suele buscar quien entrevista.`
+          : 'Te has animado a responder: es el primer paso. Ahora toca incluir las ideas clave de la pregunta.',
+        suggestions: missing.length > 0
+          ? 'Revisa las ideas clave de abajo que no aparecen en tu respuesta y añade un ejemplo de algo que hayas hecho.'
+          : 'Están todas las ideas clave. Para redondear, añade un ejemplo concreto de un proyecto tuyo.',
+        checklist: keyPoints
       });
     }, 1000);
   };
@@ -825,7 +832,7 @@ export default function App() {
                     <section className="card-technical p-6 animate-enter" aria-live="polite">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-line">
                         <h4 className="font-display font-semibold text-lg text-fg">Cómo ha ido tu respuesta</h4>
-                        <VuMeter value={interviewFeedback.score} label="puntuación" tone="ok" />
+                        <VuMeter value={interviewFeedback.score} label="puntuación orientativa" tone={interviewFeedback.score >= 60 ? 'ok' : 'gap'} />
                       </div>
 
                       <dl className="space-y-5 text-sm">
