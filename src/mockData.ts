@@ -14,43 +14,43 @@ export const AVAILABLE_TECH_STACK = [
 export const ROLE_DATABASE: Record<string, RoleDetail> = {
   frontend: {
     name: 'Frontend Developer',
-    mustHave: ['JavaScript (ES6+)', 'React / Vue / Angular', 'HTML5 & CSS3', 'Git', 'Responsive Design'],
-    niceToHave: ['TypeScript', 'Next.js / Nuxt', 'Tailwind CSS', 'Testing (Jest/Cypress)', 'State Mgmt (Zustand/Redux)'],
+    mustHave: ['JavaScript (ES6+)', 'React / Vue / Angular', 'HTML5 & CSS3', 'Git', 'Diseño responsive (adaptado a móvil)'],
+    niceToHave: ['TypeScript', 'Next.js / Nuxt', 'Tailwind CSS', 'Tests automáticos (Jest/Cypress)', 'Gestión del estado (Zustand/Redux)'],
     marketDemand: 'Alta',
-    avgSalaryJunior: '20.000€ - 26.000€ / año',
-    keyProject: 'Aplicación web interactiva que consuma una API externa con paginación, filtros y gestión de estado persistente.'
+    avgSalaryJunior: '20.000€ - 26.000€ al año',
+    keyProject: 'Una aplicación web que muestre datos de un servicio externo (API), con páginas, filtros y que recuerde lo que elige cada usuario.'
   },
   backend: {
     name: 'Backend Developer',
-    mustHave: ['Node.js / Python / Java', 'SQL / Relational DBs', 'REST APIs', 'Git', 'Authentication / JWT'],
-    niceToHave: ['Docker', 'MongoDB / NoSQL', 'TypeScript', 'Clean Architecture', 'Testing (Unit/Integration)'],
-    marketDemand: 'Muy Alta',
-    avgSalaryJunior: '22.000€ - 28.000€ / año',
-    keyProject: 'API REST robusta con autenticación de usuarios, roles de acceso, validación de datos y documentación en Swagger.'
+    mustHave: ['Node.js / Python / Java', 'SQL / bases de datos relacionales', 'APIs REST', 'Git', 'Autenticación de usuarios (JWT)'],
+    niceToHave: ['Docker', 'MongoDB / NoSQL', 'TypeScript', 'Arquitectura limpia', 'Tests unitarios y de integración'],
+    marketDemand: 'Muy alta',
+    avgSalaryJunior: '22.000€ - 28.000€ al año',
+    keyProject: 'Un servicio para otras aplicaciones (API REST) con inicio de sesión, distintos permisos por usuario, comprobación de datos y su documentación (Swagger).'
   },
   fullstack: {
     name: 'Fullstack Developer',
-    mustHave: ['JavaScript / TypeScript', 'React / Frontend Framework', 'Node.js / Backend Language', 'SQL / NoSQL', 'Git'],
-    niceToHave: ['Docker', 'CI/CD basics', 'Cloud Deployments (Vercel/Render)', 'ORM (Prisma/TypeORM)'],
-    marketDemand: 'Muy Alta',
-    avgSalaryJunior: '22.000€ - 29.000€ / año',
-    keyProject: 'SaaS simple con panel de usuario, pagos integrados (Stripe demo) y CRUD completo con base de datos.'
+    mustHave: ['JavaScript / TypeScript', 'React u otro framework de frontend', 'Node.js u otro lenguaje de servidor', 'SQL / NoSQL', 'Git'],
+    niceToHave: ['Docker', 'Bases de CI/CD (publicación automática)', 'Publicar en la nube (Vercel/Render)', 'ORM (Prisma/TypeORM)'],
+    marketDemand: 'Muy alta',
+    avgSalaryJunior: '22.000€ - 29.000€ al año',
+    keyProject: 'Una aplicación web completa con área de usuario, pagos de prueba (Stripe) y opciones para crear, ver, editar y borrar datos guardados en una base de datos.'
   },
   data: {
     name: 'Data Analyst / BI',
-    mustHave: ['SQL avanzado', 'Python (Pandas, NumPy)', 'PowerBI / Tableau', 'Excel Avanzado', 'Estadística básica'],
-    niceToHave: ['Scikit-Learn', 'ETL pipelines', 'BigQuery / Snowflake', 'Git'],
+    mustHave: ['SQL avanzado', 'Python (Pandas, NumPy)', 'PowerBI / Tableau', 'Excel avanzado', 'Estadística básica'],
+    niceToHave: ['Scikit-Learn', 'Procesos ETL (mover y limpiar datos)', 'BigQuery / Snowflake', 'Git'],
     marketDemand: 'Alta',
-    avgSalaryJunior: '21.000€ - 27.000€ / año',
-    keyProject: 'Dashboard interactivo de negocio analizando un dataset real de Kaggle con hallazgos e hipótesis explicadas.'
+    avgSalaryJunior: '21.000€ - 27.000€ al año',
+    keyProject: 'Un panel interactivo (dashboard) que analice datos reales de Kaggle y explique qué has descubierto y por qué.'
   },
   qa: {
     name: 'QA Automation / Tester',
-    mustHave: ['Metodología de Testing', 'JavaScript / Python', 'Cypress / Selenium', 'Git', 'Postman / API Testing'],
-    niceToHave: ['CI/CD (GitHub Actions)', 'Playwright', 'Jira / TestRail', 'Performance Testing (JMeter)'],
+    mustHave: ['Metodología de pruebas', 'JavaScript / Python', 'Cypress / Selenium', 'Git', 'Postman / pruebas de APIs'],
+    niceToHave: ['CI/CD (GitHub Actions)', 'Playwright', 'Jira / TestRail', 'Pruebas de rendimiento (JMeter)'],
     marketDemand: 'Alta',
-    avgSalaryJunior: '20.000€ - 25.000€ / año',
-    keyProject: 'Suite de pruebas end-to-end automatizada para una e-commerce simulada con generación de reportes.'
+    avgSalaryJunior: '20.000€ - 25.000€ al año',
+    keyProject: 'Un conjunto de pruebas automáticas que recorra de principio a fin una tienda online de ejemplo y genere un informe de resultados.'
   }
 };
 
@@ -79,15 +79,15 @@ export const INTERVIEW_QUESTIONS_DATABASE: InterviewQuestion[] = [
   {
     id: 4,
     role: 'general',
-    type: 'Comportamental (STAR)',
-    question: 'Cuéntame alguna ocasión en la que te encontraste atascado con un bug técnico complejo por horas. ¿Cómo lo resolviste?',
-    keyPoints: ['Estructura STAR (Situación, Tarea, Acción, Resultado).', 'Uso de herramientas de debugging, lectura de documentación o consulta estructurada a senior/equipo.', 'Aprendizaje extraído para evitar el problema en el futuro.']
+    type: 'Sobre ti (método STAR)',
+    question: 'Cuéntame alguna ocasión en la que estuviste horas atascado con un error (bug) difícil. ¿Cómo lo resolviste?',
+    keyPoints: ['Estructura STAR (Situación, Tarea, Acción, Resultado).', 'Uso de herramientas de debugging, lectura de documentación o preguntar al equipo o a alguien con más experiencia explicando bien el problema.', 'Aprendizaje extraído para evitar el problema en el futuro.']
   },
   {
     id: 5,
     role: 'reskill',
-    type: 'Trayectoria / Transferencia',
-    question: 'Vienes de un sector ajeno a la tecnología. ¿Qué habilidades transferibles de tu experiencia anterior crees que te hacen un mejor profesional IT?',
+    type: 'Tu experiencia anterior',
+    question: 'Vienes de un sector ajeno a la tecnología. ¿Qué habilidades transferibles de tu experiencia anterior crees que te hacen un mejor profesional de la tecnología?',
     keyPoints: ['Habilidades blandas: Comunicación, resolución de problemas bajo presión, gestión de clientes o proyectos.', 'Motivación real por el cambio tecnológico y capacidad de autoaprendizaje.', 'Madurez laboral y visión de negocio aplicada al código.']
   }
 ];
