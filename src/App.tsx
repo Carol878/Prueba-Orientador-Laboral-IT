@@ -36,6 +36,9 @@ import AmbientBackground from './components/common/AmbientBackground';
 // Recomendador de itinerarios formativos
 import TrainingRecommender from './components/training/TrainingRecommender';
 
+// Comparación de tecnologías con los requisitos del puesto
+import { coversRequirement } from './lib/skillMatch';
+
 // Scroll suave (Lenis)
 import { scrollToTop, useSmoothScroll } from './lib/smoothScroll';
 
@@ -223,7 +226,7 @@ export default function App() {
   /** Requisitos imprescindibles del rol objetivo marcados como cubiertos o pendientes. */
   const mustHaveStatus = ROLE_DATABASE[targetRole].mustHave.map(req => ({
     req,
-    hasIt: techStack.some(t => req.toLowerCase().includes(t.toLowerCase()))
+    hasIt: coversRequirement(req, techStack)
   }));
   const stackCoverage = (mustHaveStatus.filter(s => s.hasIt).length / mustHaveStatus.length) * 100;
 
