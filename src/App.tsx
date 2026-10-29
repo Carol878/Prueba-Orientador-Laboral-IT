@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   ArrowRight,
   Briefcase,
@@ -35,9 +35,11 @@ import AmbientBackground from './components/common/AmbientBackground';
 
 // Recomendador de itinerarios formativos
 import TrainingRecommender from './components/training/TrainingRecommender';
+import PlanCourses from './components/training/PlanCourses';
 
 // Comparación de tecnologías con los requisitos del puesto
 import { coversRequirement } from './lib/skillMatch';
+import { gapSkillList, planGaps } from './lib/courseRecommendations';
 import { scoreAnswer } from './lib/answerScore';
 
 // Scroll suave (Lenis)
@@ -230,6 +232,13 @@ export default function App() {
     hasIt: coversRequirement(req, techStack)
   }));
   const stackCoverage = (mustHaveStatus.filter(s => s.hasIt).length / mustHaveStatus.length) * 100;
+
+  /** Lo que le falta según el plan, traducido a habilidades de los cursos de la base de datos. */
+  const requirementGaps = useMemo(
+    () => planGaps(ROLE_DATABASE[targetRole].mustHave.filter(req => !coversRequirement(req, techStack)), techStack),
+    [targetRole, techStack]
+  );
+  const planGapSkills = useMemo(() => gapSkillList(requirementGaps), [requirementGaps]);
 
   const handleEvaluateAnswer = (): void => {
     if (!userAnswer.trim()) return;
@@ -746,6 +755,8 @@ export default function App() {
                 </section>
               </div>
 
+              <PlanCourses gaps={requirementGaps} onSeeAll={() => setActiveTabYoung('training')} />
+
               <section className="card p-6">
                 <h4 className="label-tech mb-4">Tu rutina semanal de búsqueda</h4>
                 <ul className="grid md:grid-cols-3 gap-4 text-sm">
@@ -930,7 +941,7 @@ export default function App() {
 
           {/* TAB 6: RECOMENDADOR DE FORMACIÓN */}
           {activeTabYoung === 'training' && (
-            <TrainingRecommender userEmail={currentUser.email} knownSkills={techStack} />
+            <TrainingRecommender userEmail={currentUser.email} knownSkills={techStack} planGapSkills={planGapSkills} />
           )}
 
         </main>

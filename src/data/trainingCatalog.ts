@@ -1,11 +1,14 @@
 /**
  * @file trainingCatalog.ts
- * @description Catálogo de recursos formativos gratuitos, subvencionados y mixtos recopilado
- * por el Grupo Motor, y perfiles objetivo usados por el recomendador de itinerarios.
+ * @description Tipos de los recursos de formación, perfiles objetivo del recomendador y
+ * catálogo LOCAL DE RESPALDO.
  *
- * Entidad, precio, idioma y enlace se corresponden con la hoja de recursos de formación del equipo.
- * Modalidad, categoría, roles y skills son una clasificación propia para poder filtrar y recomendar.
- * Se han omitido los recursos sin relación con el empleo IT (salud, clima, propiedad intelectual...).
+ * La fuente principal es la tabla `training_resources` de Supabase (ver `supabase/training_resources.sql`
+ * y `trainingRepository.ts`). Este catálogo local solo se usa si Supabase no está configurado o no
+ * responde, para que la sección de formación nunca se quede vacía.
+ *
+ * Mantener sincronizado con la base de datos: si se edita un recurso en Supabase Studio, conviene
+ * reflejar el cambio aquí (o al revés) para que la copia de respaldo no quede desfasada.
  */
 
 export type TrainingCategory =
@@ -16,7 +19,11 @@ export type TrainingCategory =
   | 'ai_data'
   | 'soft_skills';
 
-export type TrainingPriceType = 'subvencionado' | 'gratuito' | 'mixto';
+/** Mismos valores que la columna "Precio" de la hoja de recursos. */
+export type TrainingPriceType = 'subvencionado' | 'abierto' | 'mixto';
+
+export type TrainingModality = 'Online' | 'Presencial' | 'Híbrido';
+export type TrainingLanguage = 'Español' | 'Inglés' | 'Multilingüe';
 
 export interface TrainingCourse {
   id: string;
@@ -26,9 +33,10 @@ export interface TrainingCourse {
   category: TrainingCategory;
   priceType: TrainingPriceType;
   priceLabel: string;
-  modality: 'Online' | 'Presencial' | 'Híbrido';
-  language: 'Español' | 'Inglés' | 'Multilingüe';
+  modality: TrainingModality;
+  language: TrainingLanguage;
   targetRoles: string[];
+  /** Habilidades que cubre; mismo vocabulario que `requirementSkills.ts`. */
   skillsCovered: string[];
   officialCertification: boolean;
   /** Quién respalda la certificación: el Estado (homologación oficial) o el fabricante. */
@@ -40,11 +48,12 @@ export interface TrainingCourse {
 
 export const PRICE_LABELS = {
   subvencionado: 'Subvencionado al 100 % (gratis para ti)',
-  gratuito: 'Gratis y abierto a todo el mundo',
+  abierto: 'Gratis y abierto a todo el mundo',
   mixto: 'Una parte gratis y otra de pago'
 } as const satisfies Record<TrainingPriceType, string>;
 
-export const TRAINING_CATALOG: TrainingCourse[] = [
+/** Copia local de los recursos IT de la base de datos (it_related = true). */
+export const FALLBACK_TRAINING_CATALOG: TrainingCourse[] = [
   {
     id: 'garantia-juvenil',
     refCode: 'SEPE-GJ-01',
@@ -59,8 +68,7 @@ export const TRAINING_CATALOG: TrainingCourse[] = [
     skillsCovered: ['Empleabilidad', 'Competencias digitales'],
     officialCertification: false,
     url: 'https://www.sepe.es/HomeSepe/encontrar-trabajo/Garantia-Juvenil/ofertas-garantia-juvenil.html',
-    description:
-      'Formación gratuita y oportunidades remuneradas para jóvenes de 16 a 29 años que quieren mejorar su empleabilidad o encontrar su primer empleo.'
+    description: 'Formación gratuita y oportunidades remuneradas para jóvenes de 16 a 29 años que quieren mejorar su empleabilidad o encontrar su primer empleo.'
   },
   {
     id: 'sepe-certificados-fp',
@@ -73,13 +81,12 @@ export const TRAINING_CATALOG: TrainingCourse[] = [
     modality: 'Híbrido',
     language: 'Español',
     targetRoles: ['Junior Frontend', 'Junior Backend', 'Sistemas y redes'],
-    skillsCovered: ['Fundamentos de programación', 'HTML/CSS', 'JavaScript', 'SQL', 'Java', 'Redes', 'Seguridad'],
+    skillsCovered: ['Fundamentos de programación', 'HTML/CSS', 'Diseño responsive', 'JavaScript', 'SQL', 'Java', 'Redes', 'Seguridad'],
     officialCertification: true,
     certificationIssuer: 'estatal',
     certificationName: 'Certificado Profesional (FP)',
     url: 'https://www.todofp.es/inicio.html',
-    description:
-      'Acreditaciones oficiales de Formación Profesional, incluida la familia de Informática y Comunicaciones (desarrollo web, programación, bases de datos, redes y seguridad).'
+    description: 'Acreditaciones oficiales de Formación Profesional, incluida la familia de Informática y Comunicaciones (desarrollo web, programación, bases de datos, redes y seguridad).'
   },
   {
     id: 'fundae',
@@ -92,16 +99,15 @@ export const TRAINING_CATALOG: TrainingCourse[] = [
     modality: 'Híbrido',
     language: 'Español',
     targetRoles: ['Reconversión laboral', 'Primer empleo'],
-    skillsCovered: ['Competencias digitales', 'Cloud', 'Seguridad'],
+    skillsCovered: ['Competencias digitales', 'Excel', 'Cloud', 'Seguridad'],
     officialCertification: false,
     url: 'https://experienciafundae.es/formacion-subvencionada',
-    description:
-      'Formación estatal subvencionada para empresas, personas trabajadoras y autónomas. Útil para quien ya trabaja y quiere reorientarse hacia el sector IT.'
+    description: 'Formación estatal subvencionada para empresas, personas trabajadoras y autónomas. Útil para quien ya trabaja y quiere reorientarse hacia el sector IT.'
   },
   {
     id: 'gencat-cifo',
     refCode: 'GENCAT-CIFO-04',
-    title: "Centres d'Innovació i Formació Ocupacional (CIFO)",
+    title: 'Centres d\'Innovació i Formació Ocupacional (CIFO)',
     provider: 'Generalitat de Catalunya',
     category: 'backend',
     priceType: 'subvencionado',
@@ -109,11 +115,10 @@ export const TRAINING_CATALOG: TrainingCourse[] = [
     modality: 'Presencial',
     language: 'Español',
     targetRoles: ['Junior Backend', 'Sistemas y redes', 'Reconversión laboral'],
-    skillsCovered: ['Fundamentos de programación', 'Redes', 'Competencias digitales'],
+    skillsCovered: ['Fundamentos de programación', 'Redes', 'Competencias digitales', 'Excel'],
     officialCertification: false,
     url: 'https://serveiocupacio.gencat.cat/ca/soc/com-ens-organitzem/centres-propis-formacio-cifo-cfpa/centres-dinnovacio-i-formacio-ocupacional-cifo/',
-    description:
-      'Centros propios del Servei d’Ocupació de Catalunya con especialidades de formación ocupacional, entre ellas informática y comunicaciones.'
+    description: 'Centros propios del Servei d’Ocupació de Catalunya con especialidades de formación ocupacional, entre ellas informática y comunicaciones.'
   },
   {
     id: 'gencat-cercador',
@@ -129,8 +134,7 @@ export const TRAINING_CATALOG: TrainingCourse[] = [
     skillsCovered: ['Competencias digitales', 'Empleabilidad'],
     officialCertification: false,
     url: 'https://serveiocupacio.gencat.cat/ca/persones/vull-formar-me/cercadors-formacio-especialitats/cercador-integrat',
-    description:
-      'Buscador del Servei d’Ocupació de Catalunya para localizar cursos subvencionados por especialidad, territorio y centro.'
+    description: 'Buscador del Servei d’Ocupació de Catalunya para localizar cursos subvencionados por especialidad, territorio y centro.'
   },
   {
     id: 'fpdgi-generacio-talent',
@@ -146,8 +150,7 @@ export const TRAINING_CATALOG: TrainingCourse[] = [
     skillsCovered: ['Mentoría', 'Empleabilidad', 'Comunicación'],
     officialCertification: false,
     url: 'https://www.fpdgi.org/ca/programes/generacio-talent/',
-    description:
-      'Programa de acompañamiento para jóvenes con mentoring, talleres y formación online orientados a la empleabilidad.'
+    description: 'Programa de acompañamiento para jóvenes con mentoring, talleres y formación online orientados a la empleabilidad.'
   },
   {
     id: 'paco-puerto-ccoo',
@@ -163,8 +166,7 @@ export const TRAINING_CATALOG: TrainingCourse[] = [
     skillsCovered: ['Competencias digitales', 'Empleabilidad'],
     officialCertification: false,
     url: 'https://fundaciopacopuerto.cat/cursos/',
-    description:
-      'Cursos de acreditación de competencias, preparación de oposiciones y formación ocupacional.'
+    description: 'Cursos de acreditación de competencias, preparación de oposiciones y formación ocupacional.'
   },
   {
     id: 'fad-goetech-academy',
@@ -182,8 +184,7 @@ export const TRAINING_CATALOG: TrainingCourse[] = [
     certificationIssuer: 'fabricante',
     certificationName: 'Microsoft · Cisco · Meta · IBM SkillsBuild',
     url: 'https://www.campusfad.org/goetech-academy/',
-    description:
-      'Itinerarios del campus de Fad Juventud que preparan para certificados de grandes empresas tecnológicas, muy valorados al buscar trabajo.'
+    description: 'Itinerarios del campus de Fad Juventud que preparan para certificados de grandes empresas tecnológicas, muy valorados al buscar trabajo.'
   },
   {
     id: 'securiti-education',
@@ -191,8 +192,8 @@ export const TRAINING_CATALOG: TrainingCourse[] = [
     title: 'Certificaciones: AI Governance, Data Security y PrivacyOps',
     provider: 'Securiti Education',
     category: 'cybersecurity',
-    priceType: 'gratuito',
-    priceLabel: PRICE_LABELS.gratuito,
+    priceType: 'abierto',
+    priceLabel: PRICE_LABELS.abierto,
     modality: 'Online',
     language: 'Inglés',
     targetRoles: ['Ciberseguridad', 'Gobernanza IA'],
@@ -201,8 +202,7 @@ export const TRAINING_CATALOG: TrainingCourse[] = [
     certificationIssuer: 'fabricante',
     certificationName: 'Securiti AI Governance / Data Security / PrivacyOps',
     url: 'https://education.securiti.ai/certifications/ai-governance/',
-    description:
-      'Certificaciones gratuitas sobre el uso responsable de la IA, la seguridad de los datos y la privacidad.'
+    description: 'Certificaciones gratuitas sobre el uso responsable de la IA, la seguridad de los datos y la privacidad.'
   },
   {
     id: 'ashoka-learning',
@@ -210,16 +210,15 @@ export const TRAINING_CATALOG: TrainingCourse[] = [
     title: 'Innovación social, changemaking y cambio sistémico',
     provider: 'Ashoka Learning Ecosystem',
     category: 'soft_skills',
-    priceType: 'gratuito',
-    priceLabel: PRICE_LABELS.gratuito,
+    priceType: 'abierto',
+    priceLabel: PRICE_LABELS.abierto,
     modality: 'Online',
     language: 'Multilingüe',
     targetRoles: ['Primer empleo'],
     skillsCovered: ['Emprendimiento social', 'Comunicación'],
     officialCertification: false,
     url: 'https://ale.ashoka.org/',
-    description:
-      'Recursos de aprendizaje sobre innovación social y liderazgo de proyectos con impacto.'
+    description: 'Recursos de aprendizaje sobre innovación social y liderazgo de proyectos con impacto.'
   },
   {
     id: 'mckinsey-forward',
@@ -227,16 +226,15 @@ export const TRAINING_CATALOG: TrainingCourse[] = [
     title: 'McKinsey.org Forward',
     provider: 'McKinsey.org',
     category: 'soft_skills',
-    priceType: 'gratuito',
-    priceLabel: PRICE_LABELS.gratuito,
+    priceType: 'abierto',
+    priceLabel: PRICE_LABELS.abierto,
     modality: 'Online',
     language: 'Multilingüe',
     targetRoles: ['Primer empleo', 'Reconversión laboral'],
     skillsCovered: ['Empleabilidad', 'Comunicación', 'Resolución de problemas', 'Competencias digitales'],
     officialCertification: false,
     url: 'https://www.mckinsey.org/our-programs/forward/overview',
-    description:
-      'Programa para estudiantes, personas en búsqueda de empleo y profesionales centrado en habilidades transversales para el trabajo.'
+    description: 'Programa para estudiantes, personas en búsqueda de empleo y profesionales centrado en habilidades transversales para el trabajo.'
   },
   {
     id: 'coursera',
@@ -249,11 +247,10 @@ export const TRAINING_CATALOG: TrainingCourse[] = [
     modality: 'Online',
     language: 'Multilingüe',
     targetRoles: ['Junior Frontend', 'Junior Backend', 'Datos & IA', 'Ciberseguridad'],
-    skillsCovered: ['Python', 'SQL', 'React', 'JavaScript', 'Git', 'Cloud', 'Seguridad', 'IA', 'Ciencia de datos'],
+    skillsCovered: ['Python', 'SQL', 'NoSQL', 'JavaScript', 'TypeScript', 'React', 'Node.js', 'Java', 'Git', 'Testing', 'Ciencia de datos', 'Visualización de datos', 'Excel', 'Estadística', 'Cloud', 'Seguridad', 'IA'],
     officialCertification: false,
     url: 'https://www.coursera.org/',
-    description:
-      'Plataforma con cursos de universidades y empresas tecnológicas. Muchos cursos se pueden seguir gratis; el certificado suele ser de pago.'
+    description: 'Plataforma con cursos de universidades y empresas tecnológicas. Muchos cursos se pueden seguir gratis; el certificado suele ser de pago.'
   },
   {
     id: 'khan-academy',
@@ -261,16 +258,15 @@ export const TRAINING_CATALOG: TrainingCourse[] = [
     title: 'Matemáticas, ciencias y programación',
     provider: 'Khan Academy',
     category: 'frontend',
-    priceType: 'gratuito',
-    priceLabel: PRICE_LABELS.gratuito,
+    priceType: 'abierto',
+    priceLabel: PRICE_LABELS.abierto,
     modality: 'Online',
     language: 'Multilingüe',
     targetRoles: ['Sin experiencia previa'],
-    skillsCovered: ['Fundamentos de programación', 'HTML/CSS', 'JavaScript', 'SQL', 'Matemáticas'],
+    skillsCovered: ['Fundamentos de programación', 'HTML/CSS', 'JavaScript', 'SQL', 'Matemáticas', 'Estadística'],
     officialCertification: false,
     url: 'https://es.khanacademy.org/',
-    description:
-      'Cursos gratuitos de matemáticas, ciencias, economía y programación. Buen punto de partida sin conocimientos previos.'
+    description: 'Cursos gratuitos de matemáticas, ciencias, economía y programación. Buen punto de partida sin conocimientos previos.'
   },
   {
     id: 'freecodecamp',
@@ -278,16 +274,15 @@ export const TRAINING_CATALOG: TrainingCourse[] = [
     title: 'Plataforma interactiva de desarrollo de software',
     provider: 'freeCodeCamp',
     category: 'frontend',
-    priceType: 'gratuito',
-    priceLabel: PRICE_LABELS.gratuito,
+    priceType: 'abierto',
+    priceLabel: PRICE_LABELS.abierto,
     modality: 'Online',
     language: 'Inglés',
     targetRoles: ['Junior Frontend', 'Junior Backend', 'Full Stack', 'Sin experiencia previa'],
-    skillsCovered: ['HTML/CSS', 'JavaScript', 'React', 'Python', 'SQL', 'PostgreSQL', 'APIs REST', 'Git', 'Seguridad'],
+    skillsCovered: ['HTML/CSS', 'Diseño responsive', 'JavaScript', 'React', 'Node.js', 'APIs REST', 'Python', 'SQL', 'PostgreSQL', 'NoSQL', 'Git', 'Testing', 'Ciencia de datos', 'Seguridad'],
     officialCertification: false,
     url: 'https://www.freecodecamp.org/',
-    description:
-      'Currículo práctico y gratuito de desarrollo web y programación basado en proyectos, con certificados propios de la plataforma.'
+    description: 'Currículo práctico y gratuito de desarrollo web y programación basado en proyectos, con certificados propios de la plataforma.'
   },
   {
     id: 'edx',
@@ -300,11 +295,10 @@ export const TRAINING_CATALOG: TrainingCourse[] = [
     modality: 'Online',
     language: 'Multilingüe',
     targetRoles: ['Junior Backend', 'Datos & IA', 'Full Stack'],
-    skillsCovered: ['Fundamentos de programación', 'Python', 'SQL', 'HTML/CSS', 'JavaScript', 'Ciencia de datos', 'IA'],
+    skillsCovered: ['Fundamentos de programación', 'Python', 'Java', 'SQL', 'HTML/CSS', 'JavaScript', 'Ciencia de datos', 'Estadística', 'IA'],
     officialCertification: false,
     url: 'https://www.edx.org/',
-    description:
-      'Cursos de universidades internacionales. El contenido suele ser de acceso libre y el certificado verificado, de pago.'
+    description: 'Cursos de universidades internacionales. El contenido suele ser de acceso libre y el certificado verificado, de pago.'
   },
   {
     id: 'uned-abierta',
@@ -312,16 +306,15 @@ export const TRAINING_CATALOG: TrainingCourse[] = [
     title: 'Cursos MOOC gratuitos y materiales de divulgación',
     provider: 'UNED Abierta',
     category: 'soft_skills',
-    priceType: 'gratuito',
-    priceLabel: PRICE_LABELS.gratuito,
+    priceType: 'abierto',
+    priceLabel: PRICE_LABELS.abierto,
     modality: 'Online',
     language: 'Español',
     targetRoles: ['Sin experiencia previa', 'Reconversión laboral'],
     skillsCovered: ['Competencias digitales', 'Fundamentos de programación'],
     officialCertification: false,
     url: 'https://iedra.uned.es/',
-    description:
-      'Plataforma de cursos online gratuitos (MOOC) de la UNED, con materiales de divulgación e investigación en español.'
+    description: 'Plataforma de cursos online gratuitos (MOOC) de la UNED, con materiales de divulgación e investigación en español.'
   },
   {
     id: 'mit-ocw',
@@ -329,16 +322,15 @@ export const TRAINING_CATALOG: TrainingCourse[] = [
     title: '2.500 cursos del Massachusetts Institute of Technology',
     provider: 'MIT OpenCourseWare',
     category: 'ai_data',
-    priceType: 'gratuito',
-    priceLabel: PRICE_LABELS.gratuito,
+    priceType: 'abierto',
+    priceLabel: PRICE_LABELS.abierto,
     modality: 'Online',
     language: 'Inglés',
     targetRoles: ['Junior Backend', 'Datos & IA'],
-    skillsCovered: ['Fundamentos de programación', 'Python', 'Matemáticas', 'Ciencia de datos', 'IA'],
+    skillsCovered: ['Fundamentos de programación', 'Python', 'Matemáticas', 'Estadística', 'Ciencia de datos', 'IA'],
     officialCertification: false,
     url: 'https://ocw.mit.edu/',
-    description:
-      'Materiales completos de asignaturas del MIT, incluidas ciencias de la computación y programación en Python. Sin certificado.'
+    description: 'Materiales completos de asignaturas del MIT, incluidas ciencias de la computación y programación en Python. Sin certificado.'
   },
   {
     id: 'futurelearn',
@@ -351,11 +343,10 @@ export const TRAINING_CATALOG: TrainingCourse[] = [
     modality: 'Online',
     language: 'Inglés',
     targetRoles: ['Cloud', 'Ciberseguridad', 'Datos & IA'],
-    skillsCovered: ['Cloud', 'Seguridad', 'Python', 'IA'],
+    skillsCovered: ['Cloud', 'Seguridad', 'Python', 'Ciencia de datos', 'IA'],
     officialCertification: false,
     url: 'https://www.futurelearn.com/',
-    description:
-      'Cursos online de universidades y organizaciones, con acceso gratuito limitado y opciones de pago.'
+    description: 'Cursos online de universidades y organizaciones, con acceso gratuito limitado y opciones de pago.'
   },
   {
     id: 'udemy',
@@ -368,11 +359,10 @@ export const TRAINING_CATALOG: TrainingCourse[] = [
     modality: 'Online',
     language: 'Multilingüe',
     targetRoles: ['Junior Frontend', 'Junior Backend', 'Full Stack'],
-    skillsCovered: ['React', 'Vue', 'TypeScript', 'Tailwind', 'JavaScript', 'Python', 'SQL', 'PostgreSQL', 'APIs REST', 'Git'],
+    skillsCovered: ['HTML/CSS', 'Diseño responsive', 'JavaScript', 'TypeScript', 'React', 'Vue', 'Tailwind', 'Node.js', 'Java', 'Python', 'SQL', 'PostgreSQL', 'NoSQL', 'APIs REST', 'Git', 'Testing', 'Excel', 'Visualización de datos'],
     officialCertification: false,
     url: 'https://www.udemy.com/',
-    description:
-      'Catálogo muy amplio de cursos en vídeo. Hay cursos gratuitos, pero la mayoría son de pago y la calidad varía.'
+    description: 'Catálogo muy amplio de cursos en vídeo. Hay cursos gratuitos, pero la mayoría son de pago y la calidad varía.'
   },
   {
     id: 'saylor',
@@ -380,16 +370,15 @@ export const TRAINING_CATALOG: TrainingCourse[] = [
     title: 'Certificados gratuitos en Computer Science, matemáticas e inglés',
     provider: 'Saylor Academy',
     category: 'backend',
-    priceType: 'gratuito',
-    priceLabel: PRICE_LABELS.gratuito,
+    priceType: 'abierto',
+    priceLabel: PRICE_LABELS.abierto,
     modality: 'Online',
     language: 'Inglés',
     targetRoles: ['Junior Backend', 'Sin experiencia previa'],
-    skillsCovered: ['Fundamentos de programación', 'Redes', 'Matemáticas', 'Inglés'],
+    skillsCovered: ['Fundamentos de programación', 'Redes', 'Matemáticas', 'Estadística', 'Inglés'],
     officialCertification: false,
     url: 'https://www.saylor.org/Programs',
-    description:
-      'Cursos a tu ritmo, con certificado gratuito de la plataforma, en informática, negocio, matemáticas e inglés.'
+    description: 'Cursos a tu ritmo, con certificado gratuito de la plataforma, en informática, negocio, matemáticas e inglés.'
   },
   {
     id: 'santander-open-academy',
@@ -397,20 +386,19 @@ export const TRAINING_CATALOG: TrainingCourse[] = [
     title: 'Cursos, becas de estudios y becas de movilidad',
     provider: 'Santander Open Academy',
     category: 'soft_skills',
-    priceType: 'gratuito',
-    priceLabel: PRICE_LABELS.gratuito,
+    priceType: 'abierto',
+    priceLabel: PRICE_LABELS.abierto,
     modality: 'Online',
     language: 'Multilingüe',
     targetRoles: ['Sin experiencia previa', 'Primer empleo', 'Reconversión laboral'],
     skillsCovered: ['Competencias digitales', 'IA', 'Inglés', 'Empleabilidad'],
     officialCertification: false,
     url: 'https://www.santanderopenacademy.com/en/index.html',
-    description:
-      'Cursos gratuitos y convocatorias de becas para formación y movilidad.'
+    description: 'Cursos gratuitos y convocatorias de becas para formación y movilidad.'
   }
 ];
 
-export type TrainingProfileId = 'all' | 'frontend' | 'backend_python' | 'cyber_ai' | 'zero';
+export type TrainingProfileId = 'plan' | 'all' | 'frontend' | 'backend_python' | 'cyber_ai' | 'zero';
 
 export interface TrainingProfile {
   id: TrainingProfileId;
@@ -420,6 +408,7 @@ export interface TrainingProfile {
   freeOnly: boolean;
 }
 
+/** Objetivos fijos. El perfil "Según mi plan de acción" se construye en tiempo real con lo que le falta al joven. */
 export const TRAINING_PROFILES: TrainingProfile[] = [
   { id: 'all', label: 'Ver todos los cursos', requiredSkills: [], freeOnly: false },
   {

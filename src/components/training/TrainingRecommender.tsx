@@ -2,13 +2,16 @@
  * @file TrainingRecommender.tsx
  * @description Recomendador de formación: cruza el perfil objetivo con lo que el joven ya domina
  * (diagnóstico técnico) y ordena el catálogo por los huecos que cubre cada programa.
+ * Los cursos se leen de Supabase (`training_resources`) con respaldo local si no hay conexión.
+ * Si el joven ha hecho el diagnóstico, el objetivo por defecto es "Según mi plan de acción".
  */
 
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowUpRight, Check, Plus, Search } from 'lucide-react';
 
-import { TRAINING_CATALOG, TRAINING_PROFILES, normalizeSkill } from '../../data/trainingCatalog';
-import type { TrainingCourse, TrainingProfileId } from '../../data/trainingCatalog';
+import { TRAINING_PROFILES, normalizeSkill } from '../../data/trainingCatalog';
+import type { TrainingCourse, TrainingProfile, TrainingProfileId } from '../../data/trainingCatalog';
+import { useTrainingCatalog } from '../../hooks/useTrainingCatalog';
 import { PageHeader } from '../common/AppShell';
 import VuMeter from '../common/VuMeter';
 
@@ -19,6 +22,8 @@ interface TrainingRecommenderProps {
   userEmail: string;
   /** Tecnologías marcadas en el diagnóstico técnico; no cuentan como pendientes. */
   knownSkills: string[];
+  /** Habilidades pendientes según el plan de acción (vacío si no le falta nada). */
+  planGapSkills: string[];
 }
 
 interface RankedCourse {
@@ -51,8 +56,9 @@ function loadItinerary(email: string): string[] {
   }
 }
 
-export default function TrainingRecommender({ userEmail, knownSkills }: TrainingRecommenderProps) {
-  const [profileId, setProfileId] = useState<TrainingProfileId>('all');
+export default function TrainingRecommender({ userEmail, knownSkills, planGapSkills }: TrainingRecommenderProps) {
+  const { courses, source, isLoading } = useTrainingCatalog();
+  const [profileId, setProfileId] = useState<TrainingProfileId>(planGapSkills.length > 0 ? 'plan' : 'all');
   const [query, setQuery] = useState<string>('');
   const [costFilter, setCostFilter] = useState<CostFilter>('all');
   const [itinerary, setItinerary] = useState<string[]>(() => loadItinerary(userEmail));
@@ -65,7 +71,16 @@ export default function TrainingRecommender({ userEmail, knownSkills }: Training
     }
   }, [userEmail, itinerary]);
 
-  const profile = TRAINING_PROFILES.find(p => p.id === profileId) ?? TRAINING_PROFILES[0];
+  /** Objetivos disponibles: primero el del plan de acción (si le falta algo), luego los fijos. */
+  const profiles = useMemo<TrainingProfile[]>(
+    () =>
+      planGapSkills.length > 0
+        ? [{ id: 'plan', label: 'Según mi plan de acción', requiredSkills: planGapSkills, freeOnly: false }, ...TRAINING_PROFILES]
+        : TRAINING_PROFILES,
+    [planGapSkills]
+  );
+
+  const profile = profiles.find(p => p.id === profileId) ?? profiles[0];
 
   const known = useMemo(() => new Set(knownSkills.map(normalizeSkill)), [knownSkills]);
 
@@ -79,7 +94,7 @@ export default function TrainingRecommender({ userEmail, knownSkills }: Training
   const rankedCourses = useMemo<RankedCourse[]>(() => {
     const term = query.trim().toLowerCase();
 
-    return TRAINING_CATALOG
+    return courses
       .filter(course => !profile.freeOnly || course.priceType !== 'mixto')
       .filter(course => {
         if (costFilter === 'free') return course.priceType !== 'mixto';
@@ -98,7 +113,7 @@ export default function TrainingRecommender({ userEmail, knownSkills }: Training
         gapSkills: course.skillsCovered.filter(skill => pendingSkills.includes(skill))
       }))
       .sort((a, b) => b.gapSkills.length - a.gapSkills.length);
-  }, [query, costFilter, profile, pendingSkills]);
+  }, [courses, query, costFilter, profile, pendingSkills]);
 
   const toggleItinerary = (courseId: string): void => {
     setItinerary(prev => (prev.includes(courseId) ? prev.filter(id => id !== courseId) : [...prev, courseId]));
@@ -120,8 +135,8 @@ export default function TrainingRecommender({ userEmail, knownSkills }: Training
       {/* Objetivo y análisis de huecos */}
       <section className="mb-8" aria-labelledby="training-goal">
         <h3 id="training-goal" className="label-tech mb-3">¿Qué te gustaría hacer?</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
-          {TRAINING_PROFILES.map(option => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {profiles.map(option => (
             <button
               key={option.id}
               type="button"
@@ -186,11 +201,14 @@ export default function TrainingRecommender({ userEmail, knownSkills }: Training
       </section>
 
       <p className="text-sm text-fg-3 mb-4 tabular-nums" aria-live="polite">
-        {rankedCourses.length} de {TRAINING_CATALOG.length} programas
+        {isLoading ? 'Cargando cursos…' : `${rankedCourses.length} de ${courses.length} programas`}
+        {source === 'local' && (
+          <span className="block text-xs mt-1">Mostrando la copia local del catálogo (sin conexión con la base de datos).</span>
+        )}
       </p>
 
       {/* Fichas de programas: los certificados ocupan el ancho completo */}
-      {rankedCourses.length === 0 ? (
+      {isLoading ? null : rankedCourses.length === 0 ? (
         <div className="card p-8 text-center text-sm text-fg-2">
           No hay programas que encajen con lo que has elegido. Prueba con otra búsqueda o quita el filtro de precio.
         </div>
