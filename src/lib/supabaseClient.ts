@@ -6,7 +6,7 @@
  * al hacer `npm run build`, así que la clave acaba siendo pública: por eso solo debe usarse la clave
  * "anon"/"publishable" y la seguridad la garantizan las políticas RLS de la base de datos.
  *
- * Si faltan las variables, `supabase` vale `null` y la app usa los datos locales de respaldo.
+ * Si faltan las variables, `supabase` vale `null` y la sección de formación muestra el error.
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -25,5 +25,5 @@ export const supabase: SupabaseClient | null = isSupabaseConfigured
   : null;
 
 if (!isSupabaseConfigured && import.meta.env.DEV) {
-  console.warn('[supabase] Faltan VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY en .env.local: se usarán los datos locales.');
+  console.error('[supabase] Faltan VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY en .env.local: no se podrán cargar los cursos.');
 }

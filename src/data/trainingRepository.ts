@@ -2,13 +2,16 @@
  * @file trainingRepository.ts
  * @description Lectura de los recursos de formación desde Supabase (tabla `training_resources`).
  *
- * - Convierte las filas (snake_case) al tipo `TrainingCourse` que usa la interfaz.
- * - Guarda el resultado en memoria: el plan de acción y la sección de formación comparten una sola petición.
- * - Si Supabase no está configurado, falla o devuelve 0 filas, usa `FALLBACK_TRAINING_CATALOG`.
+ * La base de datos es la ÚNICA fuente de cursos: no hay copia local de respaldo. Si algo falla,
+ * se devuelve un error con el motivo concreto para que se vea en pantalla y en la consola,
+ * y así saber exactamente dónde está el problema de conexión.
+ *
+ * El resultado correcto se guarda en memoria (el plan de acción y la sección de formación
+ * comparten una sola petición). Los errores NO se guardan, para poder reintentar.
  */
 
-import { supabase } from '../lib/supabaseClient';
-import { FALLBACK_TRAINING_CATALOG, PRICE_LABELS } from './trainingCatalog';
+import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
+import { PRICE_LABELS } from './trainingCatalog';
 import type {
   TrainingCategory,
   TrainingCourse,
@@ -36,12 +39,24 @@ interface TrainingResourceRow {
   certification_name: string | null;
 }
 
-export type CatalogSource = 'supabase' | 'local';
+/** Dónde ha fallado la carga. */
+export type CatalogErrorKind =
+  | 'not_configured' // faltan las variables de .env.local al compilar
+  | 'request_failed' // Supabase respondió con error (URL, clave, tabla o permisos)
+  | 'network' // no hubo respuesta (sin internet, URL inexistente, proyecto pausado…)
+  | 'empty'; // la consulta funcionó pero no devolvió cursos
 
-export interface TrainingCatalogResult {
-  courses: TrainingCourse[];
-  source: CatalogSource;
+export interface CatalogError {
+  kind: CatalogErrorKind;
+  /** Mensaje para la persona usuaria. */
+  message: string;
+  /** Detalle técnico para depurar (se muestra plegado y en la consola). */
+  detail: string;
 }
+
+export type TrainingCatalogResult =
+  | { ok: true; courses: TrainingCourse[] }
+  | { ok: false; error: CatalogError };
 
 const COLUMNS =
   'id, ref_code, title, provider, description, url, price_type, language, modality, category, skills, target_roles, official_certification, certification_issuer, certification_name';
@@ -67,12 +82,21 @@ function toCourse(row: TrainingResourceRow): TrainingCourse {
   };
 }
 
-const LOCAL_RESULT: TrainingCatalogResult = { courses: FALLBACK_TRAINING_CATALOG, source: 'local' };
+function failure(kind: CatalogErrorKind, message: string, detail: string): TrainingCatalogResult {
+  console.error(`[formación] ${message}\n→ ${detail}`);
+  return { ok: false, error: { kind, message, detail } };
+}
 
 async function loadFromSupabase(): Promise<TrainingCatalogResult> {
-  if (!supabase) return LOCAL_RESULT;
+  if (!isSupabaseConfigured || !supabase) {
+    return failure(
+      'not_configured',
+      'La web no tiene configurada la conexión con la base de datos.',
+      'Faltan VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY en .env.local. Tras crearlo, reinicia "npm run dev" o vuelve a hacer "npm run deploy".'
+    );
+  }
 
-  const { data, error } = await supabase
+  const { data, error, status } = await supabase
     .from('training_resources')
     .select(COLUMNS)
     .eq('it_related', true)
@@ -80,23 +104,45 @@ async function loadFromSupabase(): Promise<TrainingCatalogResult> {
     .order('sort_order', { ascending: true });
 
   if (error) {
-    console.error('[formación] No se pudo leer Supabase, se usan los datos locales:', error.message);
-    return LOCAL_RESULT;
+    // Supabase devuelve status 0 cuando la petición ni siquiera llegó al servidor.
+    if (status === 0 || /fetch|network/i.test(error.message)) {
+      return failure(
+        'network',
+        'No se ha podido contactar con la base de datos.',
+        `Sin respuesta del servidor (${error.message}). Revisa la conexión a internet, que VITE_SUPABASE_URL sea correcta y que el proyecto de Supabase no esté pausado.`
+      );
+    }
+    return failure(
+      'request_failed',
+      'La base de datos ha rechazado la consulta de cursos.',
+      `HTTP ${status} · ${error.code ?? 'sin código'} · ${error.message}${error.hint ? ` · Pista: ${error.hint}` : ''}`
+    );
   }
+
   if (!data || data.length === 0) {
-    console.warn('[formación] La tabla training_resources está vacía, se usan los datos locales.');
-    return LOCAL_RESULT;
+    return failure(
+      'empty',
+      'La base de datos no ha devuelto ningún curso.',
+      'La consulta funcionó, pero la tabla training_resources no tiene filas visibles con it_related = true y active = true. Comprueba que se ejecutó supabase/training_resources.sql y que existe la política RLS "Lectura pública de recursos activos".'
+    );
   }
-  return { courses: (data as TrainingResourceRow[]).map(toCourse), source: 'supabase' };
+
+  const courses = (data as TrainingResourceRow[]).map(toCourse);
+  console.info(`[formación] ${courses.length} cursos cargados desde Supabase.`);
+  return { ok: true, courses };
 }
 
 let cached: Promise<TrainingCatalogResult> | null = null;
 
-/** Devuelve el catálogo (una sola petición por visita). Nunca lanza error. */
+/** Devuelve el catálogo desde Supabase. Nunca lanza: los fallos llegan como `{ ok: false }`. */
 export function fetchTrainingCatalog(): Promise<TrainingCatalogResult> {
-  cached ??= loadFromSupabase().catch(error => {
-    console.error('[formación] Error inesperado leyendo Supabase:', error);
-    return LOCAL_RESULT;
-  });
+  cached ??= loadFromSupabase()
+    .catch((unexpected: unknown) =>
+      failure('network', 'No se ha podido contactar con la base de datos.', String(unexpected))
+    )
+    .then(result => {
+      if (!result.ok) cached = null; // permite reintentar
+      return result;
+    });
   return cached;
 }

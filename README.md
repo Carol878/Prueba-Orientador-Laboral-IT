@@ -22,8 +22,16 @@ Los cursos que recomienda el plan de acción se leen de la tabla `training_resou
    en `.env.local`.
 3. `npm run dev` y entra como joven: en *Plan de acción* aparece el bloque **Cursos para lo que te falta**.
 
-Si `.env.local` no existe o Supabase no responde, la app usa una copia local del catálogo
-(`src/data/trainingCatalog.ts`) y lo indica en *Formación recomendada*.
+La base de datos es la **única** fuente de cursos (no hay copia en el código). Si la conexión falla,
+la web lo dice en pantalla con el motivo y un botón *Reintentar*, y la consola del navegador (F12)
+muestra el detalle con el prefijo `[formación]`:
+
+| Código en "Detalle técnico" | Qué significa | Qué revisar |
+| --- | --- | --- |
+| `not_configured` | La web se compiló sin las claves | Que exista `.env.local` con las dos variables; reiniciar `npm run dev` o repetir `npm run deploy` |
+| `network` | La petición no llegó a Supabase | Internet, `VITE_SUPABASE_URL` bien escrita, proyecto no pausado |
+| `request_failed` | Supabase respondió con error (se muestra el código HTTP) | 401: clave incorrecta · 404 / `42P01`: la tabla no existe · 403 / `42501`: permisos |
+| `empty` | La consulta funcionó pero no hay cursos visibles | Que se ejecutara el SQL y que exista la política RLS de lectura |
 
 ### Cómo se recomienda
 

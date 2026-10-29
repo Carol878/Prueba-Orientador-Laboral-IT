@@ -2,7 +2,7 @@
  * @file TrainingRecommender.tsx
  * @description Recomendador de formación: cruza el perfil objetivo con lo que el joven ya domina
  * (diagnóstico técnico) y ordena el catálogo por los huecos que cubre cada programa.
- * Los cursos se leen de Supabase (`training_resources`) con respaldo local si no hay conexión.
+ * Los cursos se leen únicamente de Supabase (`training_resources`); si falla, se muestra el motivo.
  * Si el joven ha hecho el diagnóstico, el objetivo por defecto es "Según mi plan de acción".
  */
 
@@ -12,6 +12,7 @@ import { ArrowUpRight, Check, Plus, Search } from 'lucide-react';
 import { TRAINING_PROFILES, normalizeSkill } from '../../data/trainingCatalog';
 import type { TrainingCourse, TrainingProfile, TrainingProfileId } from '../../data/trainingCatalog';
 import { useTrainingCatalog } from '../../hooks/useTrainingCatalog';
+import CatalogErrorNotice from './CatalogErrorNotice';
 import { PageHeader } from '../common/AppShell';
 import VuMeter from '../common/VuMeter';
 
@@ -57,7 +58,8 @@ function loadItinerary(email: string): string[] {
 }
 
 export default function TrainingRecommender({ userEmail, knownSkills, planGapSkills }: TrainingRecommenderProps) {
-  const { courses, source, isLoading } = useTrainingCatalog();
+  const { courses, status, error, retry } = useTrainingCatalog();
+  const isLoading = status === 'loading';
   const [profileId, setProfileId] = useState<TrainingProfileId>(planGapSkills.length > 0 ? 'plan' : 'all');
   const [query, setQuery] = useState<string>('');
   const [costFilter, setCostFilter] = useState<CostFilter>('all');
@@ -201,14 +203,13 @@ export default function TrainingRecommender({ userEmail, knownSkills, planGapSki
       </section>
 
       <p className="text-sm text-fg-3 mb-4 tabular-nums" aria-live="polite">
-        {isLoading ? 'Cargando cursos…' : `${rankedCourses.length} de ${courses.length} programas`}
-        {source === 'local' && (
-          <span className="block text-xs mt-1">Mostrando la copia local del catálogo (sin conexión con la base de datos).</span>
-        )}
+        {isLoading ? 'Cargando cursos…' : error ? '' : `${rankedCourses.length} de ${courses.length} programas`}
       </p>
 
       {/* Fichas de programas: los certificados ocupan el ancho completo */}
-      {isLoading ? null : rankedCourses.length === 0 ? (
+      {error ? (
+        <CatalogErrorNotice error={error} onRetry={retry} />
+      ) : isLoading ? null : rankedCourses.length === 0 ? (
         <div className="card p-8 text-center text-sm text-fg-2">
           No hay programas que encajen con lo que has elegido. Prueba con otra búsqueda o quita el filtro de precio.
         </div>

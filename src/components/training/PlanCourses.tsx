@@ -8,6 +8,7 @@ import { useMemo } from 'react';
 import { ArrowUpRight, ChevronRight, GraduationCap, Loader2 } from 'lucide-react';
 
 import { useTrainingCatalog } from '../../hooks/useTrainingCatalog';
+import CatalogErrorNotice from './CatalogErrorNotice';
 import { recommendCourses } from '../../lib/courseRecommendations';
 import type { RequirementGap } from '../../lib/courseRecommendations';
 
@@ -21,7 +22,8 @@ interface PlanCoursesProps {
 const MAX_COURSES = 4;
 
 export default function PlanCourses({ gaps, onSeeAll }: PlanCoursesProps) {
-  const { courses, isLoading } = useTrainingCatalog();
+  const { courses, status, error, retry } = useTrainingCatalog();
+  const isLoading = status === 'loading';
 
   const recommendations = useMemo(() => recommendCourses(courses, gaps, MAX_COURSES), [courses, gaps]);
 
@@ -53,6 +55,8 @@ export default function PlanCourses({ gaps, onSeeAll }: PlanCoursesProps) {
         <p className="p-4 bg-ok-soft border-l-2 border-ok text-sm text-fg">
           Ya cubres lo básico del puesto. En “Formación recomendada” puedes buscar cursos para ampliar o conseguir un certificado.
         </p>
+      ) : error ? (
+        <CatalogErrorNotice error={error} onRetry={retry} />
       ) : isLoading ? (
         <p className="flex items-center gap-2 text-sm text-fg-3 py-6" role="status">
           <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
@@ -104,7 +108,7 @@ export default function PlanCourses({ gaps, onSeeAll }: PlanCoursesProps) {
         </ol>
       )}
 
-      {!isLoading && uncovered.length > 0 && (
+      {status === 'ready' && uncovered.length > 0 && (
         <p className="text-xs text-fg-3 mt-4">
           Sin cursos en el catálogo por ahora para: {uncovered.join(', ')}.
         </p>
