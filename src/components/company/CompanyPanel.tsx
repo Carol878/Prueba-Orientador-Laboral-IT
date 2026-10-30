@@ -8,7 +8,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { BarChart3, Building2, FilePlus2, Inbox } from 'lucide-react';
+import { AlertTriangle, BarChart3, Building2, FilePlus2, Inbox } from 'lucide-react';
 
 import type { Application, JobOffer, UserSession } from '../../types';
 import { OFFERS_CHANGED_EVENT, offersService } from '../../services/offersService';
@@ -84,14 +84,11 @@ export default function CompanyPanel({ user, onLogout }: CompanyPanelProps) {
     setNotice('');
   };
 
+  // `NavItem` no admite insignias: el contador de nuevas va en la etiqueta, corto ("Vacantes · 2").
+  const unseenSuffix = unseenTotal > 0 ? ` · ${unseenTotal}` : '';
   const navItems: NavItem[] = [
     { id: 'publish', label: 'Publicar vacante', shortLabel: 'Publicar', icon: FilePlus2 },
-    {
-      id: 'vacancies',
-      label: `Mis vacantes y candidaturas${unseenTotal > 0 ? ` (${unseenTotal} ${unseenTotal === 1 ? 'nueva' : 'nuevas'})` : ''}`,
-      shortLabel: `Vacantes${unseenTotal > 0 ? ` (${unseenTotal})` : ''}`,
-      icon: Inbox
-    },
+    { id: 'vacancies', label: `Vacantes y candidaturas${unseenSuffix}`, shortLabel: `Vacantes${unseenSuffix}`, icon: Inbox },
     { id: 'impact', label: 'Impacto', shortLabel: 'Impacto', icon: BarChart3 }
   ];
 
@@ -104,7 +101,9 @@ export default function CompanyPanel({ user, onLogout }: CompanyPanelProps) {
     items: navItems,
     activeId: tab,
     onSelect: (id: string) => goTo(id as CompanyTab),
-    onLogout
+    onLogout,
+    // El portal de empresa es una herramienta de trabajo: sin selector de fondo animado.
+    showBackdropToggle: false
   };
 
   const selectedOffer = selectedOfferId ? offers.find(o => o.id === selectedOfferId) : undefined;
@@ -123,10 +122,11 @@ export default function CompanyPanel({ user, onLogout }: CompanyPanelProps) {
       <main className="flex-1 flex flex-col min-w-0">
         <MobileHeader {...shell} />
 
-        <div className="flex-1 px-4 py-8 md:p-10 max-w-6xl mx-auto w-full animate-enter" key={`${tab}-${selectedOfferId ?? ''}-${editingOffer?.id ?? ''}`}>
+        <div className="page flex-1 animate-enter" key={`${tab}-${selectedOfferId ?? ''}-${editingOffer?.id ?? ''}`}>
           {loadError && (
-            <div role="alert" className="mb-4 p-3 border border-danger/30 border-l-2 border-l-danger bg-danger-soft rounded text-danger text-sm flex flex-wrap items-center justify-between gap-3">
-              <span>{loadError}</span>
+            <div role="alert" className="alert alert-danger mb-4 items-center">
+              <AlertTriangle aria-hidden="true" />
+              <p className="flex-1">{loadError}</p>
               <button type="button" onClick={() => reload()} className="btn btn-secondary">Reintentar</button>
             </div>
           )}
