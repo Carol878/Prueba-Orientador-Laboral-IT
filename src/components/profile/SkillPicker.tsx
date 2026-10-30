@@ -98,7 +98,7 @@ export function SkillPicker({ selected, onToggle, excluded = [] }: SkillPickerPr
 
           {groups.map(group => (
             <fieldset key={group.id} className="mb-4 last:mb-0">
-              <legend className="text-sm font-semibold text-fg mb-2">{group.label}</legend>
+              <legend className="text-body font-semibold text-fg mb-2">{group.label}</legend>
               <div className="flex flex-wrap gap-2">
                 {group.skills.map(skill => (
                   <SkillChip key={skill} skill={skill} selected={selected.includes(skill)} onToggle={onToggle} />
@@ -107,7 +107,7 @@ export function SkillPicker({ selected, onToggle, excluded = [] }: SkillPickerPr
             </fieldset>
           ))}
 
-          {groups.length === 0 && !canAddCustom && <p className="text-sm text-fg-2">No hay resultados para «{trimmed}».</p>}
+          {groups.length === 0 && !canAddCustom && <p className="text-body text-fg-2">No hay resultados para «{trimmed}».</p>}
 
           {canAddCustom && (
             <button type="button" onClick={addCustom} className="btn btn-secondary mt-2">

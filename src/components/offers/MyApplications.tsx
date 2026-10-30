@@ -1,6 +1,8 @@
 /**
  * @file MyApplications.tsx
  * @description "Mis candidaturas": Esperando respuesta · Contacto abierto · Guardadas · Cerradas.
+ * Cada candidatura lleva una mini línea de tiempo (Enviada → Vista por la empresa → Contacto…)
+ * con sus fechas y el plazo en el que la empresa suele responder.
  *
  * Al entrar, las candidaturas con novedades se marcan como vistas (`markSeen`) pero se siguen
  * señalando como "Novedad" mientras la persona esté en esta vista.
@@ -15,6 +17,7 @@ import { offersService } from '../../services/offersService';
 import { evaluateOffer, isOfferActive, similarOffers } from '../../lib/offerMatch';
 import type { FitProfile } from '../../lib/offerMatch';
 import { formatDay, formatSalary, introMessage } from './offerText';
+import EmptyIllustration from '../young/EmptyIllustration';
 
 interface MyApplicationsProps {
   applications: Application[];
@@ -31,6 +34,8 @@ interface MyApplicationsProps {
   /** Quita una oferta guardada o retira una candidatura que aún no tiene respuesta. */
   onUndo: (offerId: string) => void;
   onPracticeInterview: (offer: JobOffer) => void;
+  /** Vuelve a la pila de ofertas (desde el estado vacío). */
+  onBrowseOffers: () => void;
 }
 
 const CONTACT_STATUSES = new Set(['contact_open', 'interview', 'hired']);
@@ -57,6 +62,68 @@ const CONTACT_LABEL: Record<string, string> = {
   hired: '¡Te han contratado!'
 };
 
+/** Fecha AAAA-MM-DD a la que la empresa suele haber respondido. */
+function expectedReplyDate(app: Application, offer: JobOffer): string {
+  const date = new Date(app.createdAt);
+  date.setDate(date.getDate() + offer.responseDays);
+  return date.toISOString().slice(0, 10);
+}
+
+interface TimelineStep {
+  label: string;
+  detail?: string;
+  state?: 'done' | 'current';
+}
+
+/** Mini línea de tiempo de una candidatura (horizontal, con la fecha bajo cada paso). */
+function ApplicationTimeline({ app, offer, closed }: { app: Application; offer: JobOffer | undefined; closed: boolean }) {
+  const seen = !app.unseenByCompany || app.status !== 'pending';
+  const steps: TimelineStep[] = [
+    { label: 'Enviada', detail: formatDay(app.createdAt), state: 'done' },
+    { label: 'Vista por la empresa', detail: seen ? undefined : 'Aún no', state: seen ? 'done' : 'current' }
+  ];
+
+  if (CONTACT_STATUSES.has(app.status)) {
+    steps.push({ label: 'Contacto abierto', detail: app.status === 'contact_open' ? formatDay(app.updatedAt) : undefined, state: 'done' });
+    if (app.status === 'interview' || app.status === 'hired') {
+      steps.push({ label: app.status === 'hired' ? 'Contratada' : 'Entrevista', detail: formatDay(app.updatedAt), state: 'done' });
+    }
+  } else if (closed) {
+    steps.push({ label: 'Cerrada', detail: formatDay(app.updatedAt) });
+  } else {
+    steps.push({
+      label: 'Respuesta',
+      detail: offer ? `hacia el ${formatDay(expectedReplyDate(app, offer))}` : undefined,
+      state: seen ? 'current' : undefined
+    });
+  }
+
+  return (
+    <div className="mt-4">
+      <ol className="timeline timeline-horizontal" aria-label="Seguimiento de la candidatura">
+        {steps.map(step => (
+          <li key={step.label} className="timeline-item" data-state={step.state}>
+            <span className="timeline-node" aria-hidden="true" />
+            <span className={`block text-meta font-semibold leading-tight ${step.state === 'done' ? 'text-fg' : 'text-fg-2'}`}>
+              {step.label}
+            </span>
+            {step.detail && <span className="block text-caption text-fg-3 mt-0.5 nums">{step.detail}</span>}
+            <span className="sr-only">{step.state === 'done' ? ' (hecho)' : step.state === 'current' ? ' (en curso)' : ''}</span>
+          </li>
+        ))}
+      </ol>
+      {offer && !closed && app.status === 'pending' && (
+        <p className="mt-3 text-meta text-fg-2">
+          <span className="badge-technical mr-1.5 nums">
+            Suele responder en {offer.responseDays} {offer.responseDays === 1 ? 'día' : 'días'}
+          </span>
+          {app.wantsFadSupport && 'Una orientadora de Fad te acompañará.'}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function Section({ title, count, empty, children }: { title: string; count: number; empty: string; children: ReactNode }) {
   const id = useId();
   return (
@@ -65,7 +132,7 @@ function Section({ title, count, empty, children }: { title: string; count: numb
         {title}
         <span className="badge-technical">{count}</span>
       </h3>
-      {count === 0 ? <p className="text-sm text-fg-2 card p-4">{empty}</p> : <ul className="space-y-3">{children}</ul>}
+      {count === 0 ? <p className="text-body text-fg-2 card p-4">{empty}</p> : <ul className="space-y-3">{children}</ul>}
     </section>
   );
 }
@@ -77,7 +144,7 @@ function OfferSummary({ offer, fresh }: { offer: JobOffer | undefined; fresh?: b
       {(fresh || badge) && (
         <div className="flex flex-wrap gap-2 mb-2">
           {fresh && (
-            <p className="badge-technical text-gap border-gap/60">
+            <p className="badge-technical text-cert border-cert/60">
               <Bell className="w-3.5 h-3.5" aria-hidden="true" />
               Novedad
             </p>
@@ -87,9 +154,9 @@ function OfferSummary({ offer, fresh }: { offer: JobOffer | undefined; fresh?: b
       )}
       {offer ? (
         <>
-          <p className="text-sm text-fg-2">{offer.companyName}</p>
+          <p className="text-body text-fg-2">{offer.companyName}</p>
           <p className="font-display font-semibold text-lg leading-snug text-fg">{offer.title}</p>
-          <p className="text-sm text-fg-2 mt-0.5">
+          <p className="text-body text-fg-2 mt-0.5 nums">
             {formatSalary(offer)} · {offer.city} · {offer.modality}
           </p>
         </>
@@ -127,7 +194,7 @@ function IntroMessage({ offer, candidate, contactEmail }: { offer: JobOffer; can
 
   return (
     <div className="mt-4">
-      <p className="text-sm text-fg">
+      <p className="text-body text-fg">
         Email de la empresa:{' '}
         <a href={`mailto:${companyEmail}`} className="font-semibold text-accent-strong underline underline-offset-2 break-all">
           {companyEmail}
@@ -142,7 +209,7 @@ function IntroMessage({ offer, candidate, contactEmail }: { offer: JobOffer; can
         rows={8}
         value={body}
         onChange={event => setBody(event.target.value)}
-        className="input-technical resize-y leading-relaxed text-sm"
+        className="input-technical resize-y leading-relaxed text-body"
         data-lenis-prevent
       />
       <div className="mt-2 flex flex-wrap gap-2">
@@ -170,7 +237,8 @@ export default function MyApplications({
   onShowOffer,
   onInterested,
   onUndo,
-  onPracticeInterview
+  onPracticeInterview,
+  onBrowseOffers
 }: MyApplicationsProps) {
   // Candidaturas que tenían novedades al verlas aquí (se marcan como vistas, pero se siguen señalando).
   const [fresh, setFresh] = useState<Set<string>>(() => new Set());
@@ -198,6 +266,23 @@ export default function MyApplications({
     .filter(([id, decision]) => decision === 'saved' && findOffer(id))
     .map(([id]) => findOffer(id) as JobOffer);
 
+  if (applications.length === 0 && saved.length === 0) {
+    return (
+      <div className="card p-6 md:p-8 flex flex-col sm:flex-row sm:items-center gap-5">
+        <EmptyIllustration variant="applications" />
+        <div>
+          <p className="font-display font-semibold text-lead text-fg">Todavía no tienes candidaturas</p>
+          <p className="text-body text-fg-2 mt-1 max-w-md">
+            Cuando digas «Me interesa» a una oferta, la verás aquí con su seguimiento: si la empresa la ha visto y cuándo suele responder.
+          </p>
+          <button type="button" onClick={onBrowseOffers} className="btn btn-primary mt-4">
+            Ver ofertas
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <Section title="Esperando respuesta" count={waiting.length} empty="Cuando digas «Me interesa» a una oferta, la verás aquí.">
@@ -206,16 +291,12 @@ export default function MyApplications({
           return (
             <li key={app.id} className="card p-4">
               <OfferSummary offer={offer} fresh={fresh.has(app.id)} />
-              <p className="text-sm text-fg-2 mt-2">
-                Enviada el {formatDay(app.createdAt)}.
-                {offer && ` Suele responder en ${offer.responseDays} ${offer.responseDays === 1 ? 'día' : 'días'}.`}
-                {app.wantsFadSupport && ' Una orientadora de Fad te acompañará.'}
-              </p>
+              <ApplicationTimeline app={app} offer={offer} closed={false} />
               {offerState(offer) === 'paused' && (
-                <p className="text-sm text-fg mt-2">La empresa ha pausado la oferta. Tu candidatura sigue en pie y todavía pueden responderte.</p>
+                <p className="text-body text-fg mt-2">La empresa ha pausado la oferta. Tu candidatura sigue en pie y todavía pueden responderte.</p>
               )}
               {offer && offerState(offer) === 'expired' && (
-                <p className="text-sm text-fg mt-2">
+                <p className="text-body text-fg mt-2">
                   El plazo terminó el {formatDay(offer.closesAt)}: ya no entran candidaturas nuevas, pero la empresa todavía puede responderte.
                 </p>
               )}
@@ -242,11 +323,12 @@ export default function MyApplications({
           return (
             <li key={app.id} className="card-technical p-4 md:p-5">
               <OfferSummary offer={offer} fresh={fresh.has(app.id)} />
-              <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-ok">
+              <ApplicationTimeline app={app} offer={offer} closed={false} />
+              <p className="mt-4 inline-flex items-center gap-1.5 text-body font-semibold text-ok">
                 <Check className="w-4 h-4" aria-hidden="true" />
                 {CONTACT_LABEL[app.status]}
               </p>
-              <p className="text-sm text-fg-2 mt-1">
+              <p className="text-body text-fg-2 mt-1">
                 La empresa ya puede ver tu nombre y tu email. Escríbeles tú también: así demuestras interés.
                 {app.wantsFadSupport && ' Tu orientadora de Fad se pondrá en contacto contigo.'}
               </p>
@@ -267,7 +349,7 @@ export default function MyApplications({
           isOfferActive(offer) ? (
             <li key={offer.id} className="card p-4">
               <OfferSummary offer={offer} />
-              <p className="text-sm text-fg-2 mt-2">Cierra el {formatDay(offer.closesAt)}.</p>
+              <p className="text-body text-fg-2 mt-2">Cierra el {formatDay(offer.closesAt)}.</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <button type="button" onClick={() => onInterested(offer)} disabled={busy} className="btn btn-primary">
                   Me interesa
@@ -280,7 +362,7 @@ export default function MyApplications({
           ) : (
             <li key={offer.id} className="card p-4">
               <OfferSummary offer={offer} />
-              <p className="text-sm text-fg-2 mt-2">Esta oferta ya no admite candidaturas.</p>
+              <p className="text-body text-fg-2 mt-2">Esta oferta ya no admite candidaturas.</p>
               <button type="button" onClick={() => onUndo(offer.id)} disabled={busy} className="btn btn-secondary mt-3">
                 Quitar de guardadas
               </button>
@@ -299,7 +381,8 @@ export default function MyApplications({
           return (
             <li key={app.id} className="card p-4 md:p-5">
               <OfferSummary offer={offer} fresh={fresh.has(app.id)} />
-              <div className="mt-3 p-3 bg-raised border-l-2 border-line-strong text-sm text-fg leading-relaxed">
+              <ApplicationTimeline app={app} offer={offer} closed />
+              <div className="mt-4 p-3 bg-raised border-l-2 border-line-strong text-body text-fg leading-relaxed">
                 {app.status === 'declined' ? (
                   <>
                     <p>Esta vez la empresa ha seguido con otra persona. Gracias por presentarte: cada candidatura te acerca.</p>
@@ -315,7 +398,7 @@ export default function MyApplications({
               </div>
 
               {missing.length > 0 && (
-                <p className="mt-3 text-sm text-fg-2">
+                <p className="mt-3 text-body text-fg-2">
                   <span className="font-semibold text-fg">Te faltaba: </span>
                   {missing.join(', ')}. Puedes empezar por ahí en «Formación recomendada».
                 </p>
@@ -323,14 +406,14 @@ export default function MyApplications({
 
               {similar.length > 0 && (
                 <div className="mt-3">
-                  <p className="text-sm font-semibold text-fg mb-2">Ofertas parecidas que aún no has visto</p>
+                  <p className="text-body font-semibold text-fg mb-2">Ofertas parecidas que aún no has visto</p>
                   <ul className="space-y-1.5">
                     {similar.map(other => (
                       <li key={other.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border border-line rounded">
-                        <span className="text-sm text-fg">
+                        <span className="text-body text-fg">
                           {other.title} <span className="text-fg-2">· {other.companyName}</span>
                         </span>
-                        <button type="button" onClick={() => onShowOffer(other.id)} className="btn btn-secondary min-h-9 px-3">
+                        <button type="button" onClick={() => onShowOffer(other.id)} className="btn btn-secondary px-3">
                           Ver oferta
                         </button>
                       </li>

@@ -4,17 +4,20 @@
  * (diagnóstico técnico) y ordena el catálogo por los huecos que cubre cada programa.
  * Los cursos se leen únicamente de Supabase (`training_resources`); si falla, se muestra el motivo.
  * Si el joven ha hecho el diagnóstico, el objetivo por defecto es "Según mi plan de acción".
+ * Se enseñan 6 programas y el resto con "Ver más", para que no sea un muro de tarjetas.
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowUpRight, Check, Plus, Search } from 'lucide-react';
+import { ArrowUpRight, Bookmark, BookmarkCheck, ChevronDown, Search } from 'lucide-react';
 
 import { TRAINING_PROFILES, normalizeSkill } from '../../data/trainingCatalog';
 import type { TrainingCourse, TrainingProfile, TrainingProfileId } from '../../data/trainingCatalog';
 import { useTrainingCatalog } from '../../hooks/useTrainingCatalog';
 import CatalogErrorNotice from './CatalogErrorNotice';
 import { PageHeader } from '../common/AppShell';
-import VuMeter from '../common/VuMeter';
+import FitMeter, { sortSegments } from '../young/FitMeter';
+import ProviderMonogram from '../young/ProviderMonogram';
+import { itineraryKey, loadItinerary } from '../young/journey';
 
 type CostFilter = 'all' | 'free' | 'certified';
 
@@ -44,18 +47,8 @@ const CERTIFICATION_LABELS = {
   fabricante: 'Certificado de la empresa tecnológica'
 } as const;
 
-const itineraryKey = (email: string): string => `it_orientador_itinerary:${email}`;
-
-/** Lee el itinerario guardado; si el almacenamiento falla o está corrupto, empieza vacío. */
-function loadItinerary(email: string): string[] {
-  try {
-    const saved = localStorage.getItem(itineraryKey(email));
-    const parsed: unknown = saved ? JSON.parse(saved) : [];
-    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : [];
-  } catch {
-    return [];
-  }
-}
+/** Programas que se ven de entrada y que se añaden con cada "Ver más". */
+const PAGE_SIZE = 6;
 
 export default function TrainingRecommender({ userEmail, knownSkills, planGapSkills }: TrainingRecommenderProps) {
   const { courses, status, error, retry } = useTrainingCatalog();
@@ -64,6 +57,12 @@ export default function TrainingRecommender({ userEmail, knownSkills, planGapSki
   const [query, setQuery] = useState<string>('');
   const [costFilter, setCostFilter] = useState<CostFilter>('all');
   const [itinerary, setItinerary] = useState<string[]>(() => loadItinerary(userEmail));
+  const [visibleCount, setVisibleCount] = useState<number>(PAGE_SIZE);
+
+  // Al cambiar de objetivo, búsqueda o filtro se vuelve a enseñar solo lo primero.
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [profileId, query, costFilter]);
 
   useEffect(() => {
     try {
@@ -122,13 +121,13 @@ export default function TrainingRecommender({ userEmail, knownSkills, planGapSki
   };
 
   return (
-    <div className="flex-1 px-4 py-8 md:p-10 max-w-6xl mx-auto w-full animate-enter">
+    <div className="page flex-1 animate-enter">
       <PageHeader
         eyebrow="Cursos para seguir aprendiendo"
         title="Formación recomendada"
         description="Cursos y certificados gratuitos o subvencionados, ordenados según lo que te falta aprender para llegar a tu objetivo."
         aside={
-          <span className="badge-technical">
+          <span className="badge-technical nums">
             {itinerary.length} {itinerary.length === 1 ? 'programa' : 'programas'} en tu itinerario
           </span>
         }
@@ -153,17 +152,15 @@ export default function TrainingRecommender({ userEmail, knownSkills, planGapSki
 
         {profile.requiredSkills.length > 0 && (
           <div className="mt-4 flex flex-wrap items-center gap-1.5">
-            <span className="text-xs text-fg-2 mr-1">Lo que necesitas saber para este objetivo:</span>
+            <span className="text-body text-fg-2 mr-1">Lo que necesitas saber para este objetivo:</span>
             {profile.requiredSkills.map(skill => {
               const isKnown = known.has(skill);
               return (
                 <span
                   key={skill}
-                  className={`inline-flex items-center gap-1 px-2 py-1 border rounded bg-raised text-xs ${
-                    isKnown ? 'border-ok text-ok' : 'border-gap text-gap'
-                  }`}
+                  className="inline-flex items-center gap-1.5 px-2 py-1 border border-line-strong rounded bg-raised text-meta text-fg"
                 >
-                  {isKnown && <Check className="w-3 h-3" aria-hidden="true" />}
+                  <span className="dot" data-state={isKnown ? 'have' : 'missing'} aria-hidden="true" />
                   {skill}
                   <span className="sr-only">{isKnown ? '(ya lo sabes)' : '(te falta)'}</span>
                 </span>
@@ -202,7 +199,7 @@ export default function TrainingRecommender({ userEmail, knownSkills, planGapSki
         </div>
       </section>
 
-      <p className="text-sm text-fg-3 mb-4 tabular-nums" aria-live="polite">
+      <p className="text-body text-fg-2 mb-4 nums" aria-live="polite">
         {isLoading ? 'Cargando cursos…' : error ? '' : `${rankedCourses.length} de ${courses.length} programas`}
       </p>
 
@@ -210,44 +207,49 @@ export default function TrainingRecommender({ userEmail, knownSkills, planGapSki
       {error ? (
         <CatalogErrorNotice error={error} onRetry={retry} />
       ) : isLoading ? null : rankedCourses.length === 0 ? (
-        <div className="card p-8 text-center text-sm text-fg-2">
+        <div className="card p-8 text-center text-body text-fg-2">
           No hay programas que encajen con lo que has elegido. Prueba con otra búsqueda o quita el filtro de precio.
         </div>
       ) : (
+        <>
         <ul className="grid grid-cols-1 md:grid-cols-2 grid-flow-row-dense gap-4">
-          {rankedCourses.map(({ course, gapSkills }) => {
+          {rankedCourses.slice(0, visibleCount).map(({ course, gapSkills }) => {
             const isSaved = itinerary.includes(course.id);
             const isFeatured = course.officialCertification;
-            const affinity = pendingSkills.length > 0 ? (gapSkills.length / pendingSkills.length) * 100 : 0;
 
             return (
               <li
                 key={course.id}
-                className={`card-technical flex flex-col ${isFeatured ? 'md:col-span-2' : ''}`}
+                className={`card flex flex-col ${isFeatured ? 'md:col-span-2' : ''}`}
               >
                 <div className={`p-5 md:p-6 flex-1 ${isFeatured ? 'md:grid md:grid-cols-[1fr_260px] md:gap-8' : 'flex flex-col'}`}>
                   <div className="flex flex-col">
-                    <p className="text-xs font-semibold text-fg-2 mb-1">{course.provider}</p>
+                    <div className="flex items-center gap-2.5 mb-2">
+                      <ProviderMonogram name={course.provider} />
+                      <p className="text-meta font-semibold text-fg-2 leading-snug">{course.provider}</p>
+                    </div>
                     <h3 className="font-display font-bold text-lg leading-snug tracking-[-0.015em] text-fg mb-2">{course.title}</h3>
-                    <p className="text-sm text-fg-2 leading-relaxed mb-4">{course.description}</p>
+                    <p className="text-body text-fg-2 leading-relaxed mb-4">{course.description}</p>
 
                     {gapSkills.length > 0 && (
-                      <div className="mb-3">
-                        <VuMeter value={affinity} label="de lo que te falta" />
-                      </div>
+                      <FitMeter
+                        className="mb-4 max-w-xs"
+                        segments={sortSegments(pendingSkills.map(skill => (gapSkills.includes(skill) ? 'learning' : 'missing')))}
+                        label={`Cubre ${gapSkills.length} de ${pendingSkills.length} cosas que te faltan`}
+                      />
                     )}
 
                     <ul className="flex flex-wrap gap-1.5" aria-label="Contenidos">
                       {course.skillsCovered.map(skill => (
                         <li
                           key={skill}
-                          className={`px-2 py-0.5 border rounded text-xs ${
-                            gapSkills.includes(skill)
-                              ? 'bg-gap-soft border-gap text-gap'
-                              : 'bg-raised border-line-strong text-fg-2'
+                          className={`inline-flex items-center gap-1.5 px-2 py-0.5 border border-line-strong rounded bg-raised text-meta ${
+                            gapSkills.includes(skill) ? 'text-fg' : 'text-fg-2'
                           }`}
                         >
+                          {gapSkills.includes(skill) && <span className="dot" data-state="missing" aria-hidden="true" />}
                           {skill}
+                          {gapSkills.includes(skill) && <span className="sr-only">(te falta)</span>}
                         </li>
                       ))}
                     </ul>
@@ -256,32 +258,32 @@ export default function TrainingRecommender({ userEmail, knownSkills, planGapSki
                   <div className={`flex flex-col gap-3 ${isFeatured ? 'mt-5 md:mt-0' : 'mt-5'}`}>
                     {course.certificationIssuer && (
                       <p className="px-2.5 py-2 border border-cert border-l-2 rounded bg-raised">
-                        <span className="block text-xs font-semibold text-cert">
+                        <span className="block text-meta font-semibold text-cert">
                           {CERTIFICATION_LABELS[course.certificationIssuer]}
                         </span>
                         {course.certificationName && (
-                          <span className="block text-xs text-fg-2 mt-0.5">{course.certificationName}</span>
+                          <span className="block text-meta text-fg-2 mt-0.5">{course.certificationName}</span>
                         )}
                       </p>
                     )}
 
                     <dl className="grid grid-cols-3 border border-line divide-x divide-line rounded">
                       <div className="p-2">
-                        <dt className="text-xs text-fg-3">Formato</dt>
-                        <dd className="text-xs font-semibold text-fg">{course.modality}</dd>
+                        <dt className="text-caption text-fg-3">Formato</dt>
+                        <dd className="text-meta font-semibold text-fg">{course.modality}</dd>
                       </div>
                       <div className="p-2">
-                        <dt className="text-xs text-fg-3">Idioma</dt>
-                        <dd className="text-xs font-semibold text-fg">{course.language}</dd>
+                        <dt className="text-caption text-fg-3">Idioma</dt>
+                        <dd className="text-meta font-semibold text-fg">{course.language}</dd>
                       </div>
                       <div className="p-2">
-                        <dt className="text-xs text-fg-3">Precio</dt>
-                        <dd className={`text-xs font-semibold ${course.priceType === 'mixto' ? 'text-fg' : 'text-ok'}`}>
+                        <dt className="text-caption text-fg-3">Precio</dt>
+                        <dd className={`text-meta font-semibold ${course.priceType === 'mixto' ? 'text-fg' : 'text-ok'}`}>
                           {course.priceType === 'mixto' ? 'Variable' : 'Gratis'}
                         </dd>
                       </div>
                     </dl>
-                    <p className={`text-xs ${course.priceType === 'mixto' ? 'text-fg-2' : 'text-ok'}`}>{course.priceLabel}</p>
+                    <p className={`text-meta ${course.priceType === 'mixto' ? 'text-fg-2' : 'text-ok'}`}>{course.priceLabel}</p>
                   </div>
                 </div>
 
@@ -290,7 +292,7 @@ export default function TrainingRecommender({ userEmail, knownSkills, planGapSki
                     href={course.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="btn btn-secondary"
+                    className="btn btn-ghost px-2 text-accent-strong"
                   >
                     Web oficial
                     <ArrowUpRight className="w-4 h-4" aria-hidden="true" />
@@ -300,9 +302,9 @@ export default function TrainingRecommender({ userEmail, knownSkills, planGapSki
                     type="button"
                     onClick={() => toggleItinerary(course.id)}
                     aria-pressed={isSaved}
-                    className={`btn ${isSaved ? 'bg-ok-soft border-ok text-ok' : 'btn-primary'}`}
+                    className={`btn btn-secondary ${isSaved ? 'border-ok/60 text-ok' : ''}`}
                   >
-                    {isSaved ? <Check className="w-4 h-4" aria-hidden="true" /> : <Plus className="w-4 h-4" aria-hidden="true" />}
+                    {isSaved ? <BookmarkCheck className="w-4 h-4" aria-hidden="true" /> : <Bookmark className="w-4 h-4" aria-hidden="true" />}
                     {isSaved ? 'En mi itinerario' : 'Añadir a mi itinerario'}
                   </button>
                 </div>
@@ -310,6 +312,16 @@ export default function TrainingRecommender({ userEmail, knownSkills, planGapSki
             );
           })}
         </ul>
+
+        {rankedCourses.length > visibleCount && (
+          <div className="mt-6 flex justify-center">
+            <button type="button" onClick={() => setVisibleCount(count => count + PAGE_SIZE)} className="btn btn-secondary">
+              <ChevronDown className="w-4 h-4" aria-hidden="true" />
+              <span className="nums">Ver más ({rankedCourses.length - visibleCount})</span>
+            </button>
+          </div>
+        )}
+        </>
       )}
     </div>
   );

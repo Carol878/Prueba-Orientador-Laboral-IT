@@ -1,19 +1,23 @@
 /**
  * @file OfferCard.tsx
- * @description Tarjeta de una oferta en una sola columna: lo esencial arriba (puesto, empresa, salario,
- * dónde, "Cumples X de Y" y requisitos con su estado) y el resto plegado en "Más detalles".
+ * @description Tarjeta de una oferta en una sola columna: lo esencial arriba (puesto, empresa, salario
+ * frente al sueldo junior habitual, dónde, medidor de encaje y requisitos con su estado) y el resto
+ * plegado en "Más detalles".
  *
- * Al joven nunca se le enseña un porcentaje: solo "Cumples X de Y" y el estado de cada requisito.
+ * Al joven nunca se le enseña un porcentaje: solo "Cumples X de Y", un segmento por requisito
+ * imprescindible y un punto de color en cada fila (el color nunca va solo: siempre hay texto).
  */
 
-import { ArrowUpRight, BookOpen, Check, CircleDashed, Info, MapPin, Sprout } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { ArrowUpRight, BookOpen, MapPin, Sprout } from 'lucide-react';
 
 import type { JobOffer } from '../../types';
 import type { TrainingCourse } from '../../data/trainingCatalog';
 import { fitLabel } from '../../lib/offerMatch';
 import type { OfferFit, RequirementCheck, RequirementState } from '../../lib/offerMatch';
-import { courseForRequirement, formatDay, formatSalary, whyThisOffer } from './offerText';
+import { ROLE_DATABASE } from '../../mockData';
+import FitMeter, { sortSegments } from '../young/FitMeter';
+import type { FitSegmentState } from '../young/FitMeter';
+import { courseForRequirement, formatDay, formatSalary, roleKeyForOffer, whyThisOffer } from './offerText';
 
 interface OfferCardProps {
   offer: JobOffer;
@@ -25,12 +29,76 @@ interface OfferCardProps {
   onToggleLearning: (skills: string[], learning: boolean) => void;
 }
 
-const STATE_UI: Record<RequirementState, { label: string; icon: LucideIcon; tone: string; row: string }> = {
-  have: { label: 'Lo tengo', icon: Check, tone: 'text-ok', row: 'border-line' },
-  learning: { label: 'Lo estoy aprendiendo', icon: BookOpen, tone: 'text-accent-strong', row: 'border-accent/40 border-l-2 border-l-accent bg-accent-soft' },
-  missing: { label: 'Por aprender', icon: CircleDashed, tone: 'text-gap', row: 'border-gap/40 border-l-2 border-l-gap bg-gap-soft' },
-  condition: { label: 'A confirmar en la entrevista', icon: Info, tone: 'text-fg-2', row: 'border-line' }
+/** Texto de cada estado. El color lo pone solo el punto (.dot); las filas son neutras. */
+const STATE_LABEL: Record<RequirementState, string> = {
+  have: 'Lo tengo',
+  learning: 'Lo estoy aprendiendo',
+  missing: 'Por aprender',
+  condition: 'A confirmar en la entrevista'
 };
+
+const euros = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 0, useGrouping: 'always' });
+
+/** "20.000€ - 26.000€ al año" → [20000, 26000] (o `null` si no se entiende). */
+function parseSalaryRange(text: string): [number, number] | null {
+  const numbers = (text.match(/\d{1,3}(?:\.\d{3})+|\d+/g) ?? []).map(n => Number(n.replace(/\./g, '')));
+  if (numbers.length < 2 || numbers.some(n => !Number.isFinite(n))) return null;
+  return [Math.min(numbers[0], numbers[1]), Math.max(numbers[0], numbers[1])];
+}
+
+/**
+ * Mini barra del salario de la oferta frente al sueldo junior habitual del puesto más parecido.
+ * Si la oferta no se parece a ningún puesto de la guía, no se pinta.
+ */
+function SalaryComparison({ offer }: { offer: JobOffer }) {
+  const roleKey = roleKeyForOffer(offer);
+  const role = roleKey ? ROLE_DATABASE[roleKey] : undefined;
+  const reference = role ? parseSalaryRange(role.avgSalaryJunior) : null;
+  if (!role || !reference) return null;
+
+  const [refMin, refMax] = reference;
+  const low = Math.min(refMin, offer.salaryMin);
+  const high = Math.max(refMax, offer.salaryMax);
+  const pad = Math.max((high - low) * 0.15, 1000);
+  const scaleMin = low - pad;
+  const span = high + pad - scaleMin;
+  const pos = (value: number) => `${((value - scaleMin) / span) * 100}%`;
+  const width = (from: number, to: number) => `max(${((to - from) / span) * 100}%, 4px)`;
+
+  const middle = (offer.salaryMin + offer.salaryMax) / 2;
+  const verdict =
+    middle > refMax ? 'Por encima de lo habitual' : middle < refMin ? 'Por debajo de lo habitual' : 'Dentro de lo habitual';
+  const refText = `${euros.format(refMin)} – ${euros.format(refMax)} €`;
+
+  return (
+    <div
+      className="mt-3 max-w-sm"
+      role="img"
+      aria-label={`${verdict}: el sueldo junior de ${role.name} suele estar entre ${refText} brutos al año.`}
+    >
+      <div className="relative h-4" aria-hidden="true">
+        <span className="absolute top-1/2 -translate-y-1/2 inset-x-0 h-px bg-line-strong" />
+        <span
+          className="absolute top-1/2 -translate-y-1/2 h-2 rounded-sm bg-line-strong"
+          style={{ left: pos(refMin), width: width(refMin, refMax) }}
+        />
+        <span
+          className="absolute top-1/2 -translate-y-1/2 h-1 rounded-sm bg-accent"
+          style={{ left: pos(offer.salaryMin), width: width(offer.salaryMin, offer.salaryMax) }}
+        />
+      </div>
+      <p className="mt-1 text-meta text-fg-2" aria-hidden="true">
+        <span className="font-semibold text-fg">{verdict}</span>
+        <span className="block">
+          <span className="inline-block w-3 h-1 mr-1.5 align-middle rounded-sm bg-accent" />
+          Esta oferta
+          <span className="inline-block w-3 h-2 ml-3 mr-1.5 align-middle rounded-sm bg-line-strong" />
+          Junior de {role.name}: <span className="nums">{refText}</span>
+        </span>
+      </p>
+    </div>
+  );
+}
 
 function RequirementRow({
   check,
@@ -42,21 +110,20 @@ function RequirementRow({
   onToggleLearning: OfferCardProps['onToggleLearning'];
 }) {
   const { requirement, state } = check;
-  const ui = STATE_UI[state];
   const course = state === 'missing' ? courseForRequirement(courses, requirement) : null;
 
   return (
-    <li className={`px-3 py-2.5 rounded border text-sm ${ui.row}`}>
-      <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
-        <span className="text-fg font-medium">{requirement.label}</span>
-        <span className={`flex items-center gap-1.5 text-xs font-semibold ${ui.tone}`}>
-          <ui.icon className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-          {ui.label}
-        </span>
+    <li className="px-3 py-2.5 rounded border border-line text-body">
+      <div className="flex items-start gap-2.5">
+        <span className="dot mt-[0.4375rem]" data-state={state === 'condition' ? undefined : state} aria-hidden="true" />
+        <div className="flex-1 min-w-0 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+          <span className="text-fg font-medium">{requirement.label}</span>
+          <span className="text-meta text-fg-2">{STATE_LABEL[state]}</span>
+        </div>
       </div>
 
       {requirement.trainable && state !== 'have' && (
-        <p className="mt-1.5">
+        <p className="mt-1.5 pl-[1.125rem]">
           <span className="badge-technical text-ok border-ok/50">
             <Sprout className="w-3.5 h-3.5" aria-hidden="true" />
             La empresa te lo enseña
@@ -65,9 +132,9 @@ function RequirementRow({
       )}
 
       {state === 'missing' && requirement.skills.length > 0 && (
-        <div className="mt-2 pt-2 border-t border-line flex flex-col gap-2">
+        <div className="mt-2 ml-[1.125rem] pt-2 border-t border-line flex flex-col gap-2">
           {course ? (
-            <p className="text-xs text-fg-2">
+            <p className="text-meta text-fg-2">
               Curso:{' '}
               <a
                 href={course.url}
@@ -83,12 +150,12 @@ function RequirementRow({
               {course.provider} · {course.priceLabel}
             </p>
           ) : (
-            <p className="text-xs text-fg-2">Aún no tenemos un curso del catálogo para esto.</p>
+            <p className="text-meta text-fg-2">Aún no tenemos un curso del catálogo para esto.</p>
           )}
           <button
             type="button"
             onClick={() => onToggleLearning(requirement.skills, true)}
-            className="btn btn-secondary self-start min-h-9 px-3"
+            className="btn btn-secondary self-start px-3"
           >
             <BookOpen className="w-4 h-4" aria-hidden="true" />
             Lo estoy aprendiendo
@@ -100,7 +167,7 @@ function RequirementRow({
         <button
           type="button"
           onClick={() => onToggleLearning(requirement.skills, false)}
-          className="mt-1.5 min-h-9 text-xs text-fg-2 underline underline-offset-2 hover:text-fg"
+          className="mt-1 ml-[1.125rem] min-h-11 text-meta text-fg-2 underline underline-offset-2 hover:text-fg"
         >
           Ya no lo estoy aprendiendo
         </button>
@@ -114,6 +181,16 @@ export default function OfferCard({ offer, fit, courses, targetRole, onToggleLea
   const conditions = fit.checks.filter(c => c.requirement.kind === 'condition');
   const desirables = fit.checks.filter(c => c.requirement.kind === 'knowledge' && !c.requirement.essential);
   const titleId = `offer-title-${offer.id}`;
+  const segments = sortSegments(essentials.map(c => c.state as FitSegmentState));
+  const fitText = fitLabel(fit);
+  const fitAria =
+    fit.essentialTotal > 0
+      ? `${fitText} conocimientos imprescindibles${
+          fit.essentialTotal - fit.essentialHave - fit.essentialLearning > 0
+            ? `; te faltan ${fit.essentialTotal - fit.essentialHave - fit.essentialLearning}`
+            : ''
+        }`
+      : fitText;
 
   return (
     <article className="card-technical p-5 md:p-6" aria-labelledby={titleId}>
@@ -124,25 +201,30 @@ export default function OfferCard({ offer, fit, courses, targetRole, onToggleLea
         </p>
       )}
 
-      <p className="text-sm text-fg-2">
+      <p className="text-body text-fg-2">
         {offer.companyName} · {offer.sector}
       </p>
       <h3 id={titleId} className="font-display font-bold text-xl md:text-2xl leading-tight tracking-[-0.015em] text-fg mt-1">
         {offer.title}
       </h3>
 
-      <p className="mt-3 font-semibold text-fg">{formatSalary(offer)}</p>
-      <p className="mt-1 text-sm text-fg-2 flex items-start gap-1.5">
+      <p className="mt-3 font-semibold text-lead text-fg nums">{formatSalary(offer)}</p>
+      <SalaryComparison offer={offer} />
+      <p className="mt-3 text-body text-fg-2 flex items-start gap-1.5">
         <MapPin className="w-4 h-4 mt-0.5 shrink-0 text-fg-3" aria-hidden="true" />
         <span>
           {offer.city} · {offer.modality} · Jornada {offer.workday.toLowerCase()}
         </span>
       </p>
 
-      <p className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded border border-line-strong bg-raised text-sm font-semibold text-fg">
-        {fitLabel(fit)}
-        {fit.essentialTotal > 0 && <span className="font-normal text-fg-2">imprescindibles</span>}
-      </p>
+      {fit.essentialTotal > 0 ? (
+        <div className="mt-5 max-w-sm">
+          <p className="text-meta text-fg-2 mb-1.5" aria-hidden="true">Conocimientos imprescindibles</p>
+          <FitMeter segments={segments} label={fitText} ariaLabel={fitAria} />
+        </div>
+      ) : (
+        <p className="mt-5 text-body font-semibold text-fg">{fitText}</p>
+      )}
 
       {essentials.length > 0 && (
         <section className="mt-5" aria-label="Conocimientos imprescindibles">
@@ -167,10 +249,10 @@ export default function OfferCard({ offer, fit, courses, targetRole, onToggleLea
       )}
 
       <details className="mt-5 group border-t border-line pt-3">
-        <summary className="min-h-11 flex items-center cursor-pointer text-sm font-semibold text-accent-strong">
+        <summary className="min-h-11 flex items-center cursor-pointer text-control font-semibold text-accent-strong">
           Más detalles de la oferta
         </summary>
-        <div className="pt-2 space-y-4 text-sm">
+        <div className="pt-2 space-y-4 text-body">
           <p className="text-fg-2 leading-relaxed">{offer.description}</p>
           <dl className="space-y-3">
             <div>

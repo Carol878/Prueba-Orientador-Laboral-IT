@@ -7,8 +7,10 @@
  * Todo pasa por `offersService`; los datos se recargan solos con `OFFERS_CHANGED_EVENT`.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowUpRight, Briefcase, Inbox, LoaderCircle, RotateCcw, Terminal, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { AlertCircle, ArrowUpRight, Briefcase, Inbox, LoaderCircle, RotateCcw, Terminal, Undo2, X } from 'lucide-react';
 
 import { PageHeader } from '../common/AppShell';
 import { useOffersData } from '../../hooks/useOffers';
@@ -23,10 +25,17 @@ import type { RankedOffer } from './OfferDeck';
 import ConsentDialog from './ConsentDialog';
 import MyApplications from './MyApplications';
 import { coursesForOffer, roleKeyForOffer } from './offerText';
+import EmptyIllustration from '../young/EmptyIllustration';
 
 export type OffersView = 'deck' | 'applications';
 
 interface OffersSectionProps {
+  /** Antetítulo de la cabecera ("Paso 3 de 4 · Ofertas"). */
+  eyebrow: string;
+  /** Recorrido del joven, que se pinta bajo la cabecera. */
+  stepper?: ReactNode;
+  /** Candidaturas enviadas (para el contador de la subpestaña). */
+  applicationsCount: number;
   candidate: CandidateProfile;
   /** Puesto del diagnóstico (clave de `ROLE_DATABASE`). */
   targetRole: string;
@@ -48,6 +57,9 @@ interface Filters {
 const NO_FILTERS: Filters = { modality: '', workday: '', sector: '', newcomersOnly: false };
 const MODALITIES: WorkModality[] = ['Presencial', 'Híbrido', 'Remoto'];
 const WORKDAYS: Workday[] = ['Completa', 'Parcial', 'Por turnos'];
+
+/** Segundos que se ve el aviso "Deshacer" tras cada decisión. */
+const UNDO_TOAST_MS = 5000;
 
 const DECISION_TEXT: Record<OfferDecision, string> = {
   skipped: 'Has pasado de',
@@ -87,18 +99,18 @@ function PrepareNotice({
   onClose: () => void;
 }) {
   return (
-    <section className="card-technical p-5 mb-5 animate-enter" aria-labelledby="prepare-title">
+    <section className="card p-5 mb-5 animate-enter" aria-labelledby="prepare-title">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 id="prepare-title" className="font-display font-semibold text-lg text-fg">
             Prepárate mientras responden
           </h3>
-          <p className="text-sm text-fg-2 mt-1">
+          <p className="text-body text-fg-2 mt-1">
             Hemos enviado tu interés a {offer.companyName} ({offer.title}). Suele responder en {offer.responseDays}{' '}
             {offer.responseDays === 1 ? 'día' : 'días'}. Mientras tanto:
           </p>
         </div>
-        <button type="button" onClick={onClose} className="min-w-11 min-h-11 grid place-items-center text-fg-2 hover:text-fg" aria-label="Cerrar aviso">
+        <button type="button" onClick={onClose} className="btn btn-ghost btn-icon shrink-0" aria-label="Cerrar aviso">
           <X className="w-4 h-4" aria-hidden="true" />
         </button>
       </div>
@@ -106,7 +118,7 @@ function PrepareNotice({
       {courses.length > 0 ? (
         <ul className="mt-3 space-y-1.5">
           {courses.map(course => (
-            <li key={course.id} className="px-3 py-2 border border-line rounded text-sm">
+            <li key={course.id} className="px-3 py-2 border border-line rounded text-body">
               <a
                 href={course.url}
                 target="_blank"
@@ -117,14 +129,14 @@ function PrepareNotice({
                 <ArrowUpRight className="w-3.5 h-3.5" aria-hidden="true" />
                 <span className="sr-only">(se abre en una pestaña nueva)</span>
               </a>
-              <span className="block text-xs text-fg-2 mt-0.5">
+              <span className="block text-meta text-fg-2 mt-0.5">
                 {course.provider} · {course.priceLabel}
               </span>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="mt-3 text-sm text-fg-2">Ya tienes lo que piden. Lo mejor que puedes hacer ahora es practicar la entrevista.</p>
+        <p className="mt-3 text-body text-fg-2">Ya tienes lo que piden. Lo mejor que puedes hacer ahora es practicar la entrevista.</p>
       )}
 
       <button type="button" onClick={onPractice} className="btn btn-secondary mt-4">
@@ -135,7 +147,48 @@ function PrepareNotice({
   );
 }
 
+/** Aviso temporal tras cada decisión con el botón "Deshacer" (el lector de pantalla ya lo oye aparte). */
+function UndoToast({ text, busy, onUndo, onClose }: { text: string; busy: boolean; onUndo: () => void; onClose: () => void }) {
+  const [hold, setHold] = useState(false);
+  const closeRef = useRef(onClose);
+  useEffect(() => {
+    closeRef.current = onClose;
+  }, [onClose]);
+
+  // Se cierra solo a los 5 s, salvo mientras tiene el foco o el ratón encima.
+  useEffect(() => {
+    if (hold) return;
+    const id = window.setTimeout(() => closeRef.current(), UNDO_TOAST_MS);
+    return () => window.clearTimeout(id);
+  }, [hold, text]);
+
+  // Al <body>: la animación de entrada de la vista crea un contenedor que "atraparía" el position: fixed.
+  return createPortal(
+    <div
+      className={
+        'fixed z-30 inset-x-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] mx-auto max-w-md ' +
+        'md:inset-x-auto md:right-6 md:bottom-6 md:w-[26rem] ' +
+        'flex items-center gap-3 pl-4 pr-1.5 py-1.5 bg-raised border border-line-strong rounded shadow-[0_12px_32px_rgba(0,0,0,0.45)] animate-enter'
+      }
+      onMouseEnter={() => setHold(true)}
+      onMouseLeave={() => setHold(false)}
+      onFocus={() => setHold(true)}
+      onBlur={() => setHold(false)}
+    >
+      <p className="flex-1 min-w-0 text-body text-fg line-clamp-2">{text}</p>
+      <button type="button" onClick={onUndo} disabled={busy} className="btn btn-ghost shrink-0 px-3 text-accent-strong">
+        <Undo2 className="w-4 h-4" aria-hidden="true" />
+        Deshacer
+      </button>
+    </div>,
+    document.body
+  );
+}
+
 export default function OffersSection({
+  eyebrow,
+  stepper,
+  applicationsCount,
   candidate,
   targetRole,
   view,
@@ -155,6 +208,8 @@ export default function OffersSection({
   const [prepareFor, setPrepareFor] = useState<JobOffer | null>(null);
   /** Oferta que se quiere ver la primera (al deshacer o desde "Ofertas parecidas"). */
   const [focusOfferId, setFocusOfferId] = useState<string | null>(null);
+  /** Aviso visible "Has guardado «…»" con "Deshacer" durante unos segundos. */
+  const [toast, setToast] = useState<{ offerId: string; text: string } | null>(null);
 
   // Al cambiar de persona se olvida el historial de esta sesión.
   useEffect(() => {
@@ -198,6 +253,7 @@ export default function OffersSection({
         setHistory(prev => [...prev, offer.id]);
         setFocusOfferId(prev => (prev === offer.id ? null : prev));
         setAnnouncement(`${DECISION_TEXT[decision]} «${offer.title}». Puedes deshacerlo.`);
+        setToast({ offerId: offer.id, text: `${DECISION_TEXT[decision]} «${offer.title}».` });
         setPrepareFor(decision === 'interested' ? offer : null);
       } catch (error) {
         console.error('[ofertas] No se ha podido guardar la decisión:', error);
@@ -256,6 +312,7 @@ export default function OffersSection({
         setHistory(prev => prev.filter(id => id !== target));
         setPrepareFor(prev => (prev?.id === target ? null : prev));
         setFocusOfferId(target);
+        setToast(prev => (prev?.offerId === target ? null : prev));
         const title = data.offers.find(o => o.id === target)?.title;
         setAnnouncement(title ? `Has deshecho tu decisión sobre «${title}».` : 'Has deshecho tu decisión.');
       } catch (error) {
@@ -278,18 +335,31 @@ export default function OffersSection({
   const prepareFit = prepareFor ? ranked.find(item => item.offer.id === prepareFor.id)?.fit : undefined;
 
   return (
-    <div className="flex-1 px-4 pt-8 md:px-10 md:pt-10 pb-0 max-w-3xl mx-auto w-full animate-enter">
-      <PageHeader
-        eyebrow="Ofertas de empleo"
-        title="Ofertas para ti"
-        description="Una oferta cada vez, empezando por las que más se parecen a tu perfil. Ninguna empresa ve tu nombre hasta que abre el contacto contigo."
-      />
+    <div className="page flex-1 pb-0! animate-enter">
+      {/* Con poca altura (móvil en horizontal o zoom al 200 %) se esconden la descripción y el recorrido
+          para que la oferta asome en la primera pantalla. */}
+      <div className="[@media(max-height:480px)]:[&_h2+p]:hidden">
+        <PageHeader
+          eyebrow={eyebrow}
+          title="Ofertas para ti"
+          description="Una oferta cada vez, empezando por las que más se parecen a tu perfil. Ninguna empresa ve tu nombre hasta que abre el contacto contigo."
+        />
+      </div>
+      <div className="[@media(max-height:480px)]:hidden">{stepper}</div>
+
+      {/* La pila y Mis candidaturas, en una columna cómoda de leer dentro del ancho común. */}
+      <div className="max-w-3xl">
 
       {/* Subpestañas */}
       <div role="tablist" aria-label="Ofertas y candidaturas" className="flex gap-1 mb-6 border-b border-line">
         {[
-          { id: 'deck' as const, label: 'Ofertas', icon: Briefcase },
-          { id: 'applications' as const, label: newsCount > 0 ? `Mis candidaturas (${newsCount} nuevas)` : 'Mis candidaturas', icon: Inbox }
+          { id: 'deck' as const, label: 'Ofertas', news: 0, icon: Briefcase },
+          {
+            id: 'applications' as const,
+            label: `Mis candidaturas (${applicationsCount})`,
+            news: newsCount,
+            icon: Inbox
+          }
         ].map(tab => (
           <button
             key={tab.id}
@@ -299,12 +369,17 @@ export default function OffersSection({
             aria-selected={view === tab.id}
             aria-controls={`offers-panel-${tab.id}`}
             onClick={() => onViewChange(tab.id)}
-            className={`min-h-11 px-3 -mb-px flex items-center gap-2 border-b-2 text-sm font-semibold ${
+            className={`min-h-11 px-3 -mb-px flex items-center gap-2 border-b-2 text-control font-semibold nums ${
               view === tab.id ? 'border-accent text-accent-strong' : 'border-transparent text-fg-2 hover:text-fg'
             }`}
           >
             <tab.icon className="w-4 h-4" aria-hidden="true" />
             {tab.label}
+            {tab.news > 0 && (
+              <span className="badge-technical text-cert border-cert/60 py-0">
+                {tab.news} {tab.news === 1 ? 'novedad' : 'novedades'}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -313,18 +388,19 @@ export default function OffersSection({
         {announcement}
       </p>
       {actionError && (
-        <p role="alert" className="mb-4 p-3 bg-danger-soft border-l-2 border-danger text-sm text-fg">
-          {actionError}
-        </p>
+        <div role="alert" className="alert alert-danger mb-4">
+          <AlertCircle aria-hidden="true" />
+          <p>{actionError}</p>
+        </div>
       )}
 
       {data.status === 'loading' && data.offers.length === 0 ? (
-        <p className="flex items-center gap-2 text-sm text-fg-2 py-8" role="status">
+        <p className="flex items-center gap-2 text-body text-fg-2 py-8" role="status">
           <LoaderCircle className="w-4 h-4 animate-spin" aria-hidden="true" />
           Cargando ofertas…
         </p>
       ) : data.status === 'error' ? (
-        <div role="alert" className="card p-5 text-sm text-fg">
+        <div role="alert" className="card p-5 text-body text-fg">
           <p>No hemos podido cargar las ofertas. {data.error}</p>
           <button type="button" onClick={data.reload} className="btn btn-secondary mt-3">
             <RotateCcw className="w-4 h-4" aria-hidden="true" />
@@ -345,15 +421,16 @@ export default function OffersSection({
             onInterested={offer => handleDecide(offer, 'interested')}
             onUndo={offerId => void handleUndo(offerId)}
             onPracticeInterview={practiceFor}
+            onBrowseOffers={() => onViewChange('deck')}
           />
         </div>
       ) : (
         <div role="tabpanel" id="offers-panel-deck" aria-labelledby="offers-tab-deck">
           {/* Filtros sencillos */}
           <details className="card mb-5 group" open={filtersActive || undefined}>
-            <summary className="min-h-11 px-4 flex items-center justify-between gap-3 cursor-pointer text-sm font-semibold text-fg">
+            <summary className="min-h-11 px-4 flex items-center justify-between gap-3 cursor-pointer text-control font-semibold text-fg">
               <span>Filtrar ofertas{filtersActive ? ' (filtros activos)' : ''}</span>
-              <span className="text-xs font-normal text-fg-2">Modalidad, jornada, sector</span>
+              <span className="text-meta font-normal text-fg-2">Modalidad, jornada, sector</span>
             </summary>
             <div className="px-4 pb-4 grid sm:grid-cols-3 gap-3">
               <div>
@@ -392,7 +469,7 @@ export default function OffersSection({
                   {sectors.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
-              <label className="sm:col-span-3 flex items-center gap-3 min-h-11 text-sm text-fg cursor-pointer">
+              <label className="sm:col-span-3 flex items-center gap-3 min-h-11 text-body text-fg cursor-pointer">
                 <input
                   type="checkbox"
                   checked={filters.newcomersOnly}
@@ -433,7 +510,9 @@ export default function OffersSection({
               />
             </div>
           ) : (
-            <div className="card p-6 mb-10 text-sm text-fg-2">
+            <div className="card p-6 mb-10 text-body text-fg-2 flex flex-col sm:flex-row sm:items-center gap-5">
+              <EmptyIllustration variant="filters" />
+              <div>
               {filtersActive && undecidedTotal > 0 ? (
                 <>
                   <p className="text-fg font-semibold">No hay ofertas con estos filtros.</p>
@@ -458,9 +537,21 @@ export default function OffersSection({
                   </div>
                 </>
               )}
+              </div>
             </div>
           )}
         </div>
+      )}
+
+      </div>
+
+      {toast && (
+        <UndoToast
+          text={toast.text}
+          busy={busy}
+          onUndo={() => void handleUndo(toast.offerId)}
+          onClose={() => setToast(null)}
+        />
       )}
 
       <ConsentDialog offer={pendingInterest} busy={busy} onAccept={wantsFad => void handleConsent(wantsFad)} onCancel={() => setPendingInterest(null)} />

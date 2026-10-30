@@ -54,12 +54,12 @@ export default function ConsentDialog({ offer, busy, onAccept, onCancel }: Conse
             <ShieldCheck className="w-5 h-5 mt-0.5 text-accent shrink-0" aria-hidden="true" />
             Antes de enviar tu interés
           </h2>
-          <p id={descId} className="text-sm text-fg-2 mt-2 leading-relaxed">
+          <p id={descId} className="text-body text-fg-2 mt-2 leading-relaxed">
             Vas a decir a <strong className="text-fg">{offer.companyName}</strong> que te interesa el puesto de{' '}
             <strong className="text-fg">{offer.title}</strong>. Esto es lo que pasa con tus datos:
           </p>
 
-          <ul className="mt-4 space-y-2 text-sm text-fg leading-relaxed list-disc pl-5">
+          <ul className="mt-4 space-y-2 text-body text-fg leading-relaxed list-disc pl-5">
             <li>
               La empresa verá tu perfil <strong>sin tu nombre, tu foto ni tu email</strong>: tu experiencia, lo que sabes, lo que estás
               aprendiendo, tu nivel de inglés y tu portfolio o proyecto si lo has puesto.
@@ -73,7 +73,7 @@ export default function ConsentDialog({ offer, busy, onAccept, onCancel }: Conse
             </li>
           </ul>
 
-          <label className="mt-5 flex items-start gap-3 p-3 bg-raised border border-line-strong rounded text-sm cursor-pointer">
+          <label className="mt-5 flex items-start gap-3 p-3 bg-raised border border-line-strong rounded text-body cursor-pointer">
             <input
               type="checkbox"
               checked={wantsFadSupport}

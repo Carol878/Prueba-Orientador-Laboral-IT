@@ -23,7 +23,7 @@ export function WorkExperienceFields({ value, onChange }: WorkExperienceFieldsPr
   return (
     <fieldset>
       <legend className="label-tech mb-1">Experiencia laboral (de cualquier sector)</legend>
-      <p className="text-sm text-fg-2 mb-3">
+      <p className="text-body text-fg-2 mb-3">
         Camarera, dependiente, mozo de almacén, monitor… Todo cuenta: las empresas lo verán antes que nada de tu perfil.
       </p>
 
@@ -32,11 +32,11 @@ export function WorkExperienceFields({ value, onChange }: WorkExperienceFieldsPr
           {value.map((item, index) => (
             <li key={index} className="card p-4">
               <div className="flex items-center justify-between gap-3 mb-3">
-                <p className="text-sm font-semibold text-fg">Experiencia {index + 1}</p>
+                <p className="text-body font-semibold text-fg">Experiencia {index + 1}</p>
                 <button
                   type="button"
                   onClick={() => onChange(value.filter((_, i) => i !== index))}
-                  className="min-h-9 px-2 flex items-center gap-1.5 text-xs text-fg-2 hover:text-danger"
+                  className="min-h-11 px-2 flex items-center gap-1.5 text-meta text-fg-2 hover:text-danger"
                 >
                   <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                   Quitar<span className="sr-only"> la experiencia {index + 1}</span>
@@ -114,7 +114,7 @@ export function PortfolioFields({ portfolioUrl, mainProject, onPortfolioUrlChang
   return (
     <fieldset>
       <legend className="label-tech mb-1">Tu trabajo, a la vista</legend>
-      <p className="text-sm text-fg-2 mb-3">Opcional. Ayuda a que la empresa vea lo que sabes hacer sin conocer tu nombre.</p>
+      <p className="text-body text-fg-2 mb-3">Opcional. Ayuda a que la empresa vea lo que sabes hacer sin conocer tu nombre.</p>
       <div className="grid md:grid-cols-2 gap-3">
         <div>
           <label htmlFor="portfolio-url" className="label-tech">Enlace a tu portfolio o GitHub</label>

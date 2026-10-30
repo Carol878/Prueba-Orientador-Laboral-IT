@@ -3,6 +3,9 @@
  * @description Pila de ofertas: se ve una cada vez y se decide con la barra de botones fija
  * ("Ahora no" · "Guardar" · "Me interesa"), con el teclado (← ↓ → y Z para deshacer) o,
  * si se quiere, arrastrando la tarjeta a un lado. Sin efectos 3D y respetando `prefers-reduced-motion`.
+ *
+ * La barra ocupa una sola fila de unos 56 px: en móvil cada botón lleva el icono sobre una etiqueta
+ * corta. Con poca altura (móvil en horizontal o zoom al 200 %) deja de ser fija para no tapar la oferta.
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -32,6 +35,15 @@ interface OfferDeckProps {
   onUndo: () => void;
   onToggleLearning: (skills: string[], learning: boolean) => void;
 }
+
+/** Botones de decisión: icono sobre la etiqueta en móvil; en fila desde 640 px. */
+const BAR_BUTTON = 'flex-1 min-w-0 flex-col gap-0.5 px-1 text-meta sm:flex-row sm:gap-2 sm:px-4 sm:text-control';
+
+const DECISIONS: Array<{ decision: OfferDecision; label: string; icon: typeof X; key: string }> = [
+  { decision: 'skipped', label: 'Ahora no', icon: X, key: 'ArrowLeft' },
+  { decision: 'saved', label: 'Guardar', icon: Bookmark, key: 'ArrowDown' },
+  { decision: 'interested', label: 'Me interesa', icon: Send, key: 'ArrowRight' }
+];
 
 /** Distancia (px) a partir de la cual soltar la tarjeta cuenta como decisión. */
 const DRAG_THRESHOLD = 120;
@@ -133,7 +145,7 @@ export default function OfferDeck({
 
   return (
     <div>
-      <p className="text-sm text-fg-2 mb-3" aria-live="polite">
+      <p className="text-body text-fg-2 mb-3 nums" aria-live="polite">
         {remaining === 1 ? 'Queda 1 oferta por ver.' : `Quedan ${remaining} ofertas por ver.`}
       </p>
 
@@ -170,39 +182,44 @@ export default function OfferDeck({
         </div>
       </div>
 
-      <p className="text-xs text-fg-2 mt-3 hidden md:block">
+      <p className="text-meta text-fg-2 mt-3 hidden md:block">
         Atajos de teclado: ← Ahora no · ↓ Guardar · → Me interesa · Z Deshacer. También puedes arrastrar la tarjeta a un lado.
       </p>
 
-      {/* Barra de decisión fija abajo: siempre visible, también con el zoom al 200 %. */}
+      {/* Barra de decisión fija abajo: una fila de 56 px. Sin fijar si la pantalla es muy baja. */}
       <div
-        className="sticky bottom-0 z-10 mt-4 -mx-4 px-4 py-3 md:mx-0 md:px-3 bg-surface border-t border-line-strong md:border md:rounded"
+        className={
+          'sticky bottom-0 z-10 mt-4 -mx-4 px-4 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom,0px))] ' +
+          'md:mx-0 md:px-1.5 md:pb-1.5 bg-surface border-t border-line-strong md:border md:rounded ' +
+          '[@media(max-height:480px)]:static'
+        }
         role="group"
         aria-label={`Decidir sobre la oferta ${current.offer.title}`}
       >
-        <div className="flex flex-wrap items-center gap-2">
-          <button type="button" onClick={() => onDecide(current.offer, 'skipped')} disabled={disabled} className="btn btn-secondary flex-1">
-            <X className="w-4 h-4" aria-hidden="true" />
-            Ahora no
-          </button>
-          <button type="button" onClick={() => onDecide(current.offer, 'saved')} disabled={disabled} className="btn btn-secondary flex-1">
-            <Bookmark className="w-4 h-4" aria-hidden="true" />
-            Guardar
-          </button>
-          <button type="button" onClick={() => onDecide(current.offer, 'interested')} disabled={disabled} className="btn btn-primary flex-1">
-            <Send className="w-4 h-4" aria-hidden="true" />
-            Me interesa
-          </button>
+        <div className="flex items-stretch gap-1.5">
+          {DECISIONS.map(item => (
+            <button
+              key={item.decision}
+              type="button"
+              onClick={() => onDecide(current.offer, item.decision)}
+              disabled={disabled}
+              aria-keyshortcuts={item.key}
+              className={`btn ${item.decision === 'interested' ? 'btn-primary' : 'btn-secondary'} ${BAR_BUTTON}`}
+            >
+              <item.icon className="w-4 h-4 shrink-0" aria-hidden="true" />
+              {item.label}
+            </button>
+          ))}
           <button
             type="button"
             onClick={onUndo}
             disabled={disabled || !canUndo}
-            className="btn btn-secondary px-3"
+            className="btn btn-ghost btn-icon shrink-0"
             aria-label="Deshacer la última decisión"
+            aria-keyshortcuts="Z"
             title="Deshacer (Z)"
           >
-            <Undo2 className="w-4 h-4" aria-hidden="true" />
-            <span className="hidden sm:inline">Deshacer</span>
+            <Undo2 className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
       </div>
