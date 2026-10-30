@@ -715,13 +715,15 @@ button:not(:disabled):active {
   }
 }
 
+/* `backwards` (no `both`): al terminar no deja `transform` puesto, así los hijos con
+   `position: fixed` (barras, avisos) se siguen colocando respecto a la ventana. */
 .animate-enter {
-  animation: enter 280ms var(--ease-out-strong) both;
+  animation: enter 280ms var(--ease-out-strong) backwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .animate-enter {
-    animation: fade-in 200ms ease both;
+    animation: fade-in 200ms ease backwards;
   }
 
   button:not(:disabled):active {
