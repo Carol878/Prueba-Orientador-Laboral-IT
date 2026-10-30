@@ -25,13 +25,17 @@ export interface OffersService {
   listOpenOffers(): Promise<JobOffer[]>;
   /** Todas las ofertas de una empresa, también pausadas o cerradas. */
   listCompanyOffers(companyEmail: string): Promise<JobOffer[]>;
+  /** Una oferta en cualquier estado (abierta, pausada, cerrada o caducada), o `null` si ya no existe. */
+  getOffer(offerId: string): Promise<JobOffer | null>;
   /** Crea (sin `id`) o actualiza una oferta. */
   saveOffer(offer: Omit<JobOffer, 'id' | 'createdAt'> & { id?: string }): Promise<JobOffer>;
+  /** Al cerrar una oferta, las candidaturas sin respuesta se marcan como novedad para avisar al joven. */
   setOfferStatus(offerId: string, status: OfferStatus): Promise<void>;
 
   /** Decisión del joven sobre cada oferta (id de oferta → decisión). */
   getDecisions(candidateEmail: string): Promise<Record<string, OfferDecision>>;
-  /** "Me interesa" crea la candidatura con una copia del perfil; "Ahora no" y "Guardar" solo se recuerdan. */
+  /** "Me interesa" crea la candidatura con una copia del perfil; "Ahora no" y "Guardar" solo se recuerdan.
+   *  Falla si la oferta ya no admite candidaturas (cerrada, pausada o caducada). */
   decide(candidate: CandidateProfile, offerId: string, decision: OfferDecision, wantsFadSupport?: boolean): Promise<void>;
   /** Deshace la decisión (y retira la candidatura si la empresa aún no la ha contestado). */
   undoDecision(candidateEmail: string, offerId: string): Promise<void>;
@@ -111,6 +115,10 @@ export const localOffersService: OffersService = {
     return allOffers(readStore()).filter(o => o.companyEmail === companyEmail);
   },
 
+  async getOffer(offerId) {
+    return allOffers(readStore()).find(o => o.id === offerId) ?? null;
+  },
+
   async saveOffer(input) {
     const store = readStore();
     const existing = input.id ? allOffers(store).find(o => o.id === input.id) : undefined;
@@ -125,6 +133,13 @@ export const localOffersService: OffersService = {
     const offer = allOffers(store).find(o => o.id === offerId);
     if (!offer) throw new Error(`La oferta ${offerId} no existe.`);
     store.offers = [{ ...offer, status }, ...store.offers.filter(o => o.id !== offerId)];
+    if (status === 'closed') {
+      store.applications = updateWhere(
+        store.applications,
+        a => a.offerId === offerId && a.status === 'pending',
+        a => ({ ...a, unseenByCandidate: true, updatedAt: nowIso() })
+      );
+    }
     writeStore(store);
   },
 
@@ -137,6 +152,8 @@ export const localOffersService: OffersService = {
     store.decisions[candidate.email] = { ...store.decisions[candidate.email], [offerId]: decision };
     const already = store.applications.some(a => a.offerId === offerId && a.candidateEmail === candidate.email);
     if (decision === 'interested' && !already) {
+      const offer = allOffers(store).find(o => o.id === offerId);
+      if (!offer || !isOfferActive(offer)) throw new Error('Esta oferta ya no admite candidaturas.');
       const now = nowIso();
       store.applications.unshift({
         id: newId('app'),
@@ -210,6 +227,16 @@ export const localOffersService: OffersService = {
 // IMPLEMENTACIÓN API (FastAPI, carpeta backend/)
 // ============================================================================
 
+/** Error de la API con su código HTTP (p. ej. 404 si la oferta ya no existe). */
+export class ApiError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
 async function api<T>(baseUrl: string, path: string, init: RequestInit = {}): Promise<T> {
   const token = sessionStorage.getItem(API_TOKEN_KEY);
   const response = await fetch(`${baseUrl}${path}`, {
@@ -222,7 +249,7 @@ async function api<T>(baseUrl: string, path: string, init: RequestInit = {}): Pr
   });
   if (!response.ok) {
     const body = await response.json().catch(() => null);
-    throw new Error(body?.detail ?? `Error ${response.status} en ${path}`);
+    throw new ApiError(body?.detail ?? `Error ${response.status} en ${path}`, response.status);
   }
   return response.status === 204 ? (undefined as T) : response.json();
 }
@@ -236,6 +263,11 @@ export function httpOffersService(baseUrl: string): OffersService {
   return {
     listOpenOffers: () => call('/offers'),
     listCompanyOffers: email => call(`/companies/${enc(email)}/offers`),
+    getOffer: offerId =>
+      call<JobOffer>(`/offers/${enc(offerId)}`).catch((error: unknown) => {
+        if (error instanceof ApiError && error.status === 404) return null;
+        throw error;
+      }),
     saveOffer: offer => (offer.id ? call(`/offers/${enc(offer.id)}`, json('PUT', offer)) : call('/offers', json('POST', offer))),
     setOfferStatus: (id, status) => call(`/offers/${enc(id)}/status`, json('PATCH', { status })),
     getDecisions: email => call(`/candidates/${enc(email)}/decisions`),

@@ -16,12 +16,26 @@ export interface OffersData {
   offers: JobOffer[];
   decisions: Record<string, OfferDecision>;
   applications: Application[];
+  /** Ofertas de candidaturas y guardadas que ya no están abiertas (cerradas, pausadas o caducadas), por id. */
+  pastOffers: Record<string, JobOffer>;
   /** Fecha en la que aceptó compartir su perfil (o `null`). */
   consentAt: string | null;
   error: string | null;
 }
 
-const EMPTY: OffersData = { status: 'loading', offers: [], decisions: {}, applications: [], consentAt: null, error: null };
+const EMPTY: OffersData = { status: 'loading', offers: [], decisions: {}, applications: [], pastOffers: {}, consentAt: null, error: null };
+
+/** Busca las ofertas que el joven tiene en candidaturas o guardadas y ya no salen entre las abiertas. */
+async function loadPastOffers(
+  offers: JobOffer[],
+  decisions: Record<string, OfferDecision>,
+  applications: Application[]
+): Promise<Record<string, JobOffer>> {
+  const open = new Set(offers.map(o => o.id));
+  const ids = [...new Set([...applications.map(a => a.offerId), ...Object.keys(decisions)])].filter(id => !open.has(id));
+  const found = await Promise.all(ids.map(id => offersService.getOffer(id)));
+  return Object.fromEntries(found.filter((o): o is JobOffer => o !== null).map(o => [o.id, o]));
+}
 
 /** Ejecuta `callback` cada vez que cambian las ofertas o candidaturas (esta pestaña u otra). */
 function useOffersChanged(callback: () => void): void {
@@ -51,9 +65,10 @@ export function useOffersData(candidateEmail: string): OffersData & { reload: ()
       offersService.listMyApplications(candidateEmail),
       offersService.getConsent(candidateEmail)
     ])
-      .then(([offers, decisions, applications, consentAt]) => {
+      .then(async ([offers, decisions, applications, consentAt]) => {
+        const pastOffers = await loadPastOffers(offers, decisions, applications);
         if (id !== requestId.current) return;
-        setData({ status: 'ready', offers, decisions, applications, consentAt, error: null });
+        setData({ status: 'ready', offers, decisions, applications, pastOffers, consentAt, error: null });
       })
       .catch((error: unknown) => {
         if (id !== requestId.current) return;

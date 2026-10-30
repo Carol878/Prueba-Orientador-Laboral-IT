@@ -16,6 +16,12 @@ def list_open_offers(db: DbSession, _user: CurrentUser) -> list[JobOfferOut]:
     return [JobOfferOut.model_validate(o) for o in offer_service.list_open_offers(db)]
 
 
+@router.get("/offers/{offer_id}", response_model=JobOfferOut)
+def get_offer(offer_id: str, db: DbSession, _user: CurrentUser) -> JobOfferOut:
+    """Una oferta en cualquier estado (para ver candidaturas y guardadas de ofertas ya cerradas)."""
+    return JobOfferOut.model_validate(offer_service.get_offer(db, offer_id))
+
+
 @router.get("/companies/{company_email}/offers", response_model=list[JobOfferOut])
 def list_company_offers(company_email: str, db: DbSession, user: CompanyUser) -> list[JobOfferOut]:
     """Todas las ofertas de la empresa autenticada (también pausadas y cerradas)."""

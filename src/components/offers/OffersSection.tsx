@@ -337,6 +337,7 @@ export default function OffersSection({
             applications={data.applications}
             decisions={data.decisions}
             openOffers={data.offers}
+            pastOffers={data.pastOffers}
             candidate={candidate}
             fitProfile={fitProfile}
             busy={busy}

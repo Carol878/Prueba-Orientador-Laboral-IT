@@ -6,10 +6,12 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.errors import ConflictError, NotFoundError, PermissionDeniedError
+from app.models.application import Application
 from app.models.common import new_id, utcnow
 from app.models.offer import JobOffer
 from app.models.user import User
 from app.schemas.offer import JobOfferIn
+from app.services.notifications import notify
 
 
 def today() -> date:
@@ -104,9 +106,21 @@ def update_offer(db: Session, offer_id: str, data: JobOfferIn, user: User) -> Jo
 
 
 def set_offer_status(db: Session, offer_id: str, status: str, user: User) -> JobOffer:
-    """Abre, pausa o cierra una oferta de la propia empresa."""
+    """Abre, pausa o cierra una oferta de la propia empresa.
+
+    Al cerrarla, las candidaturas que seguían sin respuesta se marcan como novedad para la persona
+    candidata: así se entera de que el proceso ha terminado en vez de quedarse esperando.
+    """
     offer = get_offer(db, offer_id)
     ensure_owner(offer, user)
     offer.status = status
+    pending: list[Application] = []
+    if status == "closed":
+        pending = list(db.scalars(select(Application).where(Application.offer_id == offer_id, Application.status == "pending")))
+        for application in pending:
+            application.unseen_by_candidate = True
+            application.updated_at = utcnow()
     db.commit()
+    for application in pending:
+        notify("offer_closed", application.candidate_email, application_id=application.id, offer_id=offer_id)
     return offer

@@ -11,9 +11,8 @@ import type { ReactNode } from 'react';
 import { Bell, Check, Copy, Mail, MessageSquare, Terminal, Undo2 } from 'lucide-react';
 
 import type { Application, CandidateProfile, JobOffer, OfferDecision } from '../../types';
-import { DEMO_JOB_OFFERS } from '../../data/jobOffers';
 import { offersService } from '../../services/offersService';
-import { evaluateOffer, similarOffers } from '../../lib/offerMatch';
+import { evaluateOffer, isOfferActive, similarOffers } from '../../lib/offerMatch';
 import type { FitProfile } from '../../lib/offerMatch';
 import { formatDay, formatSalary, introMessage } from './offerText';
 
@@ -21,6 +20,8 @@ interface MyApplicationsProps {
   applications: Application[];
   decisions: Record<string, OfferDecision>;
   openOffers: JobOffer[];
+  /** Ofertas de candidaturas y guardadas que ya no están abiertas. */
+  pastOffers: Record<string, JobOffer>;
   candidate: CandidateProfile;
   fitProfile: FitProfile;
   busy: boolean;
@@ -33,6 +34,22 @@ interface MyApplicationsProps {
 }
 
 const CONTACT_STATUSES = new Set(['contact_open', 'interview', 'hired']);
+
+/** Situación de la oferta para el joven. `missing`: la empresa la ha borrado. */
+type OfferState = 'active' | 'paused' | 'expired' | 'closed' | 'missing';
+
+function offerState(offer: JobOffer | undefined): OfferState {
+  if (!offer) return 'missing';
+  if (offer.status === 'closed') return 'closed';
+  if (offer.status === 'paused') return 'paused';
+  return isOfferActive(offer) ? 'active' : 'expired';
+}
+
+const STATE_BADGE: Partial<Record<OfferState, string>> = {
+  paused: 'En pausa',
+  expired: 'Plazo terminado',
+  closed: 'Oferta cerrada'
+};
 
 const CONTACT_LABEL: Record<string, string> = {
   contact_open: 'Contacto abierto',
@@ -54,13 +71,19 @@ function Section({ title, count, empty, children }: { title: string; count: numb
 }
 
 function OfferSummary({ offer, fresh }: { offer: JobOffer | undefined; fresh?: boolean }) {
+  const badge = STATE_BADGE[offerState(offer)];
   return (
     <div>
-      {fresh && (
-        <p className="badge-technical mb-2 text-gap border-gap/60">
-          <Bell className="w-3.5 h-3.5" aria-hidden="true" />
-          Novedad
-        </p>
+      {(fresh || badge) && (
+        <div className="flex flex-wrap gap-2 mb-2">
+          {fresh && (
+            <p className="badge-technical text-gap border-gap/60">
+              <Bell className="w-3.5 h-3.5" aria-hidden="true" />
+              Novedad
+            </p>
+          )}
+          {badge && <p className="badge-technical text-fg-2">{badge}</p>}
+        </div>
       )}
       {offer ? (
         <>
@@ -140,6 +163,7 @@ export default function MyApplications({
   applications,
   decisions,
   openOffers,
+  pastOffers,
   candidate,
   fitProfile,
   busy,
@@ -161,15 +185,18 @@ export default function MyApplications({
   }, [applications]);
 
   const openById = new Map(openOffers.map(o => [o.id, o]));
-  const findOffer = (id: string): JobOffer | undefined => openById.get(id) ?? DEMO_JOB_OFFERS.find(o => o.id === id);
+  const findOffer = (id: string): JobOffer | undefined => openById.get(id) ?? pastOffers[id];
   const undecidedPool = openOffers.filter(o => !decisions[o.id]);
+  // Una candidatura sin respuesta sigue viva mientras la oferta exista y no esté cerrada:
+  // en pausa o con el plazo terminado la empresa todavía puede contestar.
+  const isDeadOffer = (id: string): boolean => ['closed', 'missing'].includes(offerState(findOffer(id)));
 
   const contact = applications.filter(a => CONTACT_STATUSES.has(a.status));
-  const waiting = applications.filter(a => a.status === 'pending' && openById.has(a.offerId));
-  const closed = applications.filter(a => a.status === 'declined' || (a.status === 'pending' && !openById.has(a.offerId)));
+  const waiting = applications.filter(a => a.status === 'pending' && !isDeadOffer(a.offerId));
+  const closed = applications.filter(a => a.status === 'declined' || (a.status === 'pending' && isDeadOffer(a.offerId)));
   const saved = Object.entries(decisions)
-    .filter(([id, decision]) => decision === 'saved' && openById.has(id))
-    .map(([id]) => openById.get(id) as JobOffer);
+    .filter(([id, decision]) => decision === 'saved' && findOffer(id))
+    .map(([id]) => findOffer(id) as JobOffer);
 
   return (
     <div>
@@ -184,6 +211,14 @@ export default function MyApplications({
                 {offer && ` Suele responder en ${offer.responseDays} ${offer.responseDays === 1 ? 'día' : 'días'}.`}
                 {app.wantsFadSupport && ' Una orientadora de Fad te acompañará.'}
               </p>
+              {offerState(offer) === 'paused' && (
+                <p className="text-sm text-fg mt-2">La empresa ha pausado la oferta. Tu candidatura sigue en pie y todavía pueden responderte.</p>
+              )}
+              {offer && offerState(offer) === 'expired' && (
+                <p className="text-sm text-fg mt-2">
+                  El plazo terminó el {formatDay(offer.closesAt)}: ya no entran candidaturas nuevas, pero la empresa todavía puede responderte.
+                </p>
+              )}
               <div className="mt-3 flex flex-wrap gap-2">
                 {offer && (
                   <button type="button" onClick={() => onPracticeInterview(offer)} className="btn btn-secondary">
@@ -228,20 +263,30 @@ export default function MyApplications({
       </Section>
 
       <Section title="Guardadas" count={saved.length} empty="Las ofertas que guardes para pensarlas con calma aparecerán aquí.">
-        {saved.map(offer => (
-          <li key={offer.id} className="card p-4">
-            <OfferSummary offer={offer} />
-            <p className="text-sm text-fg-2 mt-2">Cierra el {formatDay(offer.closesAt)}.</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button type="button" onClick={() => onInterested(offer)} disabled={busy} className="btn btn-primary">
-                Me interesa
+        {saved.map(offer =>
+          isOfferActive(offer) ? (
+            <li key={offer.id} className="card p-4">
+              <OfferSummary offer={offer} />
+              <p className="text-sm text-fg-2 mt-2">Cierra el {formatDay(offer.closesAt)}.</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button type="button" onClick={() => onInterested(offer)} disabled={busy} className="btn btn-primary">
+                  Me interesa
+                </button>
+                <button type="button" onClick={() => onUndo(offer.id)} disabled={busy} className="btn btn-secondary">
+                  Volver a verla entre las ofertas
+                </button>
+              </div>
+            </li>
+          ) : (
+            <li key={offer.id} className="card p-4">
+              <OfferSummary offer={offer} />
+              <p className="text-sm text-fg-2 mt-2">Esta oferta ya no admite candidaturas.</p>
+              <button type="button" onClick={() => onUndo(offer.id)} disabled={busy} className="btn btn-secondary mt-3">
+                Quitar de guardadas
               </button>
-              <button type="button" onClick={() => onUndo(offer.id)} disabled={busy} className="btn btn-secondary">
-                Volver a verla entre las ofertas
-              </button>
-            </div>
-          </li>
-        ))}
+            </li>
+          )
+        )}
       </Section>
 
       <Section title="Cerradas" count={closed.length} empty="Aquí verás las candidaturas que se cierren, con el motivo y otras ofertas parecidas.">
@@ -261,7 +306,11 @@ export default function MyApplications({
                     {app.declineReason && <p className="mt-1 text-fg-2">Lo que nos cuentan: «{app.declineReason}».</p>}
                   </>
                 ) : (
-                  <p>La oferta se ha cerrado o está en pausa antes de que la empresa pudiera responder.</p>
+                  <p>
+                    {offer
+                      ? 'La empresa ha cerrado la oferta sin llegar a responder a tu candidatura. No es una valoración de tu perfil: suele pasar cuando el puesto se cubre o se cancela.'
+                      : 'La empresa ha retirado esta oferta antes de responder. No es una valoración de tu perfil.'}
+                  </p>
                 )}
               </div>
 

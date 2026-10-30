@@ -5,7 +5,7 @@ from typing import Any
 
 from fastapi.testclient import TestClient
 
-from tests.conftest import COMPANY, OTHER_COMPANY, TECH_OFFER
+from tests.conftest import COMPANY, OTHER_COMPANY, TECH_OFFER, YOUNG, express_interest
 
 
 def offer_body(**overrides: Any) -> dict[str, Any]:
@@ -95,3 +95,19 @@ def test_young_cannot_publish_offers(client: TestClient, young: dict[str, str]) 
 
 def test_unknown_offer_returns_404(client: TestClient, company: dict[str, str]) -> None:
     assert client.patch("/offers/no-existe/status", headers=company, json={"status": "closed"}).status_code == 404
+
+
+def test_closed_offer_is_still_readable(client: TestClient, young: dict[str, str], company: dict[str, str]) -> None:
+    assert client.patch(f"/offers/{TECH_OFFER}/status", headers=company, json={"status": "closed"}).status_code == 204
+    response = client.get(f"/offers/{TECH_OFFER}", headers=young)
+    assert response.status_code == 200
+    assert response.json()["status"] == "closed"
+    assert client.get("/offers/no-existe", headers=young).status_code == 404
+
+
+def test_closing_offer_flags_pending_applications(client: TestClient, young: dict[str, str], company: dict[str, str]) -> None:
+    express_interest(client, young)
+    assert client.patch(f"/offers/{TECH_OFFER}/status", headers=company, json={"status": "closed"}).status_code == 204
+    [application] = client.get(f"/candidates/{YOUNG}/applications", headers=young).json()
+    assert application["status"] == "pending"
+    assert application["unseenByCandidate"] is True
