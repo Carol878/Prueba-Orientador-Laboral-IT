@@ -1,0 +1,654 @@
+{
+  "offers": [
+    {
+      "id": "demo-techsolutions-frontend",
+      "companyEmail": "rrhh@techsolutions.demo",
+      "companyName": "Tech Solutions S.L.",
+      "title": "Desarrollador/a web frontend junior",
+      "sector": "Tecnología",
+      "city": "Sevilla",
+      "commute": "Parque Científico Cartuja · Bus C2, parada a 3 min",
+      "modality": "Híbrido",
+      "workday": "Completa",
+      "contract": "Indefinido con 6 meses de prueba",
+      "salaryMin": 21000,
+      "salaryMax": 24000,
+      "description": "Maquetarás y mantendrás las webs de nuestros clientes junto a una persona sénior que te acompañará los primeros meses.",
+      "openToNewcomers": true,
+      "responseDays": 5,
+      "requirements": [
+        {
+          "label": "JavaScript (ES6+)",
+          "kind": "knowledge",
+          "skills": [
+            "JavaScript"
+          ],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-techsolutions-frontend-r1"
+        },
+        {
+          "label": "HTML5 & CSS3",
+          "kind": "knowledge",
+          "skills": [
+            "HTML/CSS"
+          ],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-techsolutions-frontend-r2"
+        },
+        {
+          "label": "React",
+          "kind": "knowledge",
+          "skills": [
+            "React"
+          ],
+          "essential": true,
+          "trainable": true,
+          "id": "demo-techsolutions-frontend-r3"
+        },
+        {
+          "label": "Git",
+          "kind": "knowledge",
+          "skills": [
+            "Git"
+          ],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-techsolutions-frontend-r4"
+        },
+        {
+          "label": "TypeScript",
+          "kind": "knowledge",
+          "skills": [
+            "TypeScript"
+          ],
+          "essential": false,
+          "trainable": false,
+          "id": "demo-techsolutions-frontend-r5"
+        },
+        {
+          "label": "Dos días a la semana en la oficina",
+          "kind": "condition",
+          "skills": [],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-techsolutions-frontend-r6"
+        }
+      ],
+      "closesInDays": 25
+    },
+    {
+      "id": "demo-techsolutions-qa",
+      "companyEmail": "rrhh@techsolutions.demo",
+      "companyName": "Tech Solutions S.L.",
+      "title": "Técnico/a de pruebas de software (QA) junior",
+      "sector": "Tecnología",
+      "city": "Sevilla",
+      "commute": "Parque Científico Cartuja · Bus C2, parada a 3 min",
+      "modality": "Presencial",
+      "workday": "Completa",
+      "contract": "Temporal 12 meses con opción a indefinido",
+      "salaryMin": 19500,
+      "salaryMax": 22000,
+      "description": "Probarás nuestras aplicaciones antes de cada entrega y escribirás pruebas automáticas sencillas.",
+      "openToNewcomers": true,
+      "responseDays": 7,
+      "requirements": [
+        {
+          "label": "Metodología de pruebas",
+          "kind": "knowledge",
+          "skills": [
+            "Testing"
+          ],
+          "essential": true,
+          "trainable": true,
+          "id": "demo-techsolutions-qa-r1"
+        },
+        {
+          "label": "JavaScript o Python",
+          "kind": "knowledge",
+          "skills": [
+            "JavaScript",
+            "Python"
+          ],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-techsolutions-qa-r2"
+        },
+        {
+          "label": "Pruebas de APIs con Postman",
+          "kind": "knowledge",
+          "skills": [
+            "Testing",
+            "APIs REST"
+          ],
+          "essential": true,
+          "trainable": true,
+          "id": "demo-techsolutions-qa-r3"
+        },
+        {
+          "label": "Git",
+          "kind": "knowledge",
+          "skills": [
+            "Git"
+          ],
+          "essential": false,
+          "trainable": false,
+          "id": "demo-techsolutions-qa-r4"
+        },
+        {
+          "label": "Atención al detalle y paciencia para repetir pruebas",
+          "kind": "condition",
+          "skills": [],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-techsolutions-qa-r5"
+        }
+      ],
+      "closesInDays": 18
+    },
+    {
+      "id": "demo-innovadata-reporting",
+      "companyEmail": "talento@innovadata.demo",
+      "companyName": "InnovaData",
+      "title": "Analista de datos junior (informes y cuadros de mando)",
+      "sector": "Tecnología",
+      "city": "Zaragoza",
+      "commute": "Centro · Tranvía L1, parada Plaza España",
+      "modality": "Híbrido",
+      "workday": "Completa",
+      "contract": "Indefinido",
+      "salaryMin": 22000,
+      "salaryMax": 26000,
+      "description": "Prepararás informes semanales para clientes de comercio y logística. Valoramos que conozcas cómo funciona una tienda o un almacén por dentro.",
+      "openToNewcomers": true,
+      "responseDays": 5,
+      "requirements": [
+        {
+          "label": "SQL",
+          "kind": "knowledge",
+          "skills": [
+            "SQL"
+          ],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-innovadata-reporting-r1"
+        },
+        {
+          "label": "Excel avanzado",
+          "kind": "knowledge",
+          "skills": [
+            "Excel"
+          ],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-innovadata-reporting-r2"
+        },
+        {
+          "label": "Power BI",
+          "kind": "knowledge",
+          "skills": [
+            "Visualización de datos"
+          ],
+          "essential": true,
+          "trainable": true,
+          "id": "demo-innovadata-reporting-r3"
+        },
+        {
+          "label": "Python para datos",
+          "kind": "knowledge",
+          "skills": [
+            "Python",
+            "Ciencia de datos"
+          ],
+          "essential": false,
+          "trainable": false,
+          "id": "demo-innovadata-reporting-r4"
+        },
+        {
+          "label": "Estadística básica",
+          "kind": "knowledge",
+          "skills": [
+            "Estadística"
+          ],
+          "essential": false,
+          "trainable": false,
+          "id": "demo-innovadata-reporting-r5"
+        }
+      ],
+      "closesInDays": 30
+    },
+    {
+      "id": "demo-innovadata-soporte",
+      "companyEmail": "talento@innovadata.demo",
+      "companyName": "InnovaData",
+      "title": "Soporte técnico a clientes",
+      "sector": "Tecnología",
+      "city": "Zaragoza",
+      "commute": "Centro · Tranvía L1, parada Plaza España",
+      "modality": "Presencial",
+      "workday": "Por turnos",
+      "contract": "Temporal 6 meses con opción a indefinido",
+      "salaryMin": 18500,
+      "salaryMax": 20500,
+      "description": "Atenderás por teléfono y correo a clientes que usan nuestras herramientas y resolverás incidencias sencillas.",
+      "openToNewcomers": true,
+      "responseDays": 4,
+      "requirements": [
+        {
+          "label": "Competencias digitales",
+          "kind": "knowledge",
+          "skills": [
+            "Competencias digitales"
+          ],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-innovadata-soporte-r1"
+        },
+        {
+          "label": "Atención al cliente",
+          "kind": "knowledge",
+          "skills": [
+            "Comunicación"
+          ],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-innovadata-soporte-r2"
+        },
+        {
+          "label": "Nociones de redes",
+          "kind": "knowledge",
+          "skills": [
+            "Redes"
+          ],
+          "essential": true,
+          "trainable": true,
+          "id": "demo-innovadata-soporte-r3"
+        },
+        {
+          "label": "Turnos de mañana o tarde (rotativos)",
+          "kind": "condition",
+          "skills": [],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-innovadata-soporte-r4"
+        }
+      ],
+      "closesInDays": 15
+    },
+    {
+      "id": "demo-logisur-almacen",
+      "companyEmail": "empleo@logisur.demo",
+      "companyName": "LogiSur Distribución",
+      "title": "Auxiliar de almacén con gestión de inventario",
+      "sector": "Logística",
+      "city": "Getafe (Madrid)",
+      "commute": "Polígono Los Ángeles · Cercanías C-4, 10 min a pie",
+      "modality": "Presencial",
+      "workday": "Por turnos",
+      "contract": "Indefinido",
+      "salaryMin": 19000,
+      "salaryMax": 21000,
+      "description": "Recepción y preparación de pedidos y control de inventario con lector y hoja de cálculo.",
+      "openToNewcomers": true,
+      "responseDays": 3,
+      "requirements": [
+        {
+          "label": "Hoja de cálculo (Excel) a nivel usuario",
+          "kind": "knowledge",
+          "skills": [
+            "Excel"
+          ],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-logisur-almacen-r1"
+        },
+        {
+          "label": "Turnos rotativos de mañana y tarde",
+          "kind": "condition",
+          "skills": [],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-logisur-almacen-r2"
+        },
+        {
+          "label": "Carné de carretillero",
+          "kind": "condition",
+          "skills": [],
+          "essential": true,
+          "trainable": true,
+          "id": "demo-logisur-almacen-r3"
+        },
+        {
+          "label": "Formación en prevención de riesgos laborales (PRL)",
+          "kind": "condition",
+          "skills": [],
+          "essential": true,
+          "trainable": true,
+          "id": "demo-logisur-almacen-r4"
+        }
+      ],
+      "closesInDays": 12
+    },
+    {
+      "id": "demo-logisur-administrativo",
+      "companyEmail": "empleo@logisur.demo",
+      "companyName": "LogiSur Distribución",
+      "title": "Administrativo/a de tráfico y pedidos",
+      "sector": "Logística",
+      "city": "Getafe (Madrid)",
+      "commute": "Polígono Los Ángeles · Cercanías C-4, 10 min a pie",
+      "modality": "Presencial",
+      "workday": "Completa",
+      "contract": "Indefinido",
+      "salaryMin": 20000,
+      "salaryMax": 22500,
+      "description": "Gestionarás pedidos y rutas de reparto, y llevarás el seguimiento con transportistas y clientes.",
+      "openToNewcomers": true,
+      "responseDays": 5,
+      "requirements": [
+        {
+          "label": "Excel avanzado",
+          "kind": "knowledge",
+          "skills": [
+            "Excel"
+          ],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-logisur-administrativo-r1"
+        },
+        {
+          "label": "Trato con clientes y proveedores",
+          "kind": "knowledge",
+          "skills": [
+            "Comunicación"
+          ],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-logisur-administrativo-r2"
+        },
+        {
+          "label": "Competencias digitales",
+          "kind": "knowledge",
+          "skills": [
+            "Competencias digitales"
+          ],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-logisur-administrativo-r3"
+        },
+        {
+          "label": "Inglés básico",
+          "kind": "knowledge",
+          "skills": [
+            "Inglés"
+          ],
+          "essential": false,
+          "trainable": false,
+          "id": "demo-logisur-administrativo-r4"
+        }
+      ],
+      "closesInDays": 20
+    },
+    {
+      "id": "demo-nexo-atencion",
+      "companyEmail": "personas@nexoretail.demo",
+      "companyName": "Nexo Retail",
+      "title": "Atención al cliente en tienda online",
+      "sector": "Comercio",
+      "city": "Remoto (España)",
+      "commute": "Trabajo desde casa · se entrega portátil",
+      "modality": "Remoto",
+      "workday": "Parcial",
+      "contract": "Indefinido a media jornada (25 h/semana)",
+      "salaryMin": 12500,
+      "salaryMax": 13500,
+      "description": "Responderás a clientes por chat y correo: pedidos, devoluciones e incidencias.",
+      "openToNewcomers": true,
+      "responseDays": 3,
+      "requirements": [
+        {
+          "label": "Atención al cliente",
+          "kind": "knowledge",
+          "skills": [
+            "Comunicación"
+          ],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-nexo-atencion-r1"
+        },
+        {
+          "label": "Competencias digitales",
+          "kind": "knowledge",
+          "skills": [
+            "Competencias digitales"
+          ],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-nexo-atencion-r2"
+        },
+        {
+          "label": "Conexión a internet estable en casa",
+          "kind": "condition",
+          "skills": [],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-nexo-atencion-r3"
+        }
+      ],
+      "closesInDays": 10
+    },
+    {
+      "id": "demo-nexo-backend",
+      "companyEmail": "personas@nexoretail.demo",
+      "companyName": "Nexo Retail",
+      "title": "Programador/a backend junior (Python)",
+      "sector": "Comercio",
+      "city": "Madrid",
+      "commute": "Méndez Álvaro · Metro L6 y Cercanías",
+      "modality": "Híbrido",
+      "workday": "Completa",
+      "contract": "Indefinido",
+      "salaryMin": 23000,
+      "salaryMax": 27000,
+      "description": "Mantendrás la API de la tienda online: catálogo, pedidos y pagos.",
+      "openToNewcomers": false,
+      "responseDays": 7,
+      "requirements": [
+        {
+          "label": "Python",
+          "kind": "knowledge",
+          "skills": [
+            "Python"
+          ],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-nexo-backend-r1"
+        },
+        {
+          "label": "SQL / bases de datos relacionales",
+          "kind": "knowledge",
+          "skills": [
+            "SQL",
+            "PostgreSQL"
+          ],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-nexo-backend-r2"
+        },
+        {
+          "label": "APIs REST",
+          "kind": "knowledge",
+          "skills": [
+            "APIs REST"
+          ],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-nexo-backend-r3"
+        },
+        {
+          "label": "Git",
+          "kind": "knowledge",
+          "skills": [
+            "Git"
+          ],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-nexo-backend-r4"
+        },
+        {
+          "label": "Docker",
+          "kind": "knowledge",
+          "skills": [
+            "Cloud"
+          ],
+          "essential": false,
+          "trainable": true,
+          "id": "demo-nexo-backend-r5"
+        }
+      ],
+      "closesInDays": 22
+    },
+    {
+      "id": "demo-ciberes-fullstack",
+      "companyEmail": "talento@ciberes.demo",
+      "companyName": "Cíber ES Cooperativa",
+      "title": "Desarrollador/a fullstack junior",
+      "sector": "Economía social",
+      "city": "Valencia",
+      "commute": "Ruzafa · Metro L3 y L5, estación Xàtiva",
+      "modality": "Remoto",
+      "workday": "Completa",
+      "contract": "Indefinido",
+      "salaryMin": 22000,
+      "salaryMax": 25000,
+      "description": "Desarrollarás herramientas web para entidades sociales en un equipo pequeño y horizontal.",
+      "openToNewcomers": true,
+      "responseDays": 6,
+      "requirements": [
+        {
+          "label": "JavaScript / TypeScript",
+          "kind": "knowledge",
+          "skills": [
+            "JavaScript",
+            "TypeScript"
+          ],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-ciberes-fullstack-r1"
+        },
+        {
+          "label": "React u otro framework de frontend",
+          "kind": "knowledge",
+          "skills": [
+            "React",
+            "Vue"
+          ],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-ciberes-fullstack-r2"
+        },
+        {
+          "label": "Node.js u otro lenguaje de servidor",
+          "kind": "knowledge",
+          "skills": [
+            "Node.js",
+            "Python",
+            "Java"
+          ],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-ciberes-fullstack-r3"
+        },
+        {
+          "label": "SQL / NoSQL",
+          "kind": "knowledge",
+          "skills": [
+            "SQL",
+            "NoSQL"
+          ],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-ciberes-fullstack-r4"
+        },
+        {
+          "label": "Git",
+          "kind": "knowledge",
+          "skills": [
+            "Git"
+          ],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-ciberes-fullstack-r5"
+        }
+      ],
+      "closesInDays": 28
+    },
+    {
+      "id": "demo-ciberes-ciber",
+      "companyEmail": "talento@ciberes.demo",
+      "companyName": "Cíber ES Cooperativa",
+      "title": "Técnico/a de sistemas y ciberseguridad en prácticas remuneradas",
+      "sector": "Economía social",
+      "city": "Valencia",
+      "commute": "Ruzafa · Metro L3 y L5, estación Xàtiva",
+      "modality": "Presencial",
+      "workday": "Completa",
+      "contract": "Contrato formativo 12 meses",
+      "salaryMin": 16500,
+      "salaryMax": 18000,
+      "description": "Mantendrás equipos y redes de entidades sociales y aprenderás buenas prácticas de seguridad.",
+      "openToNewcomers": true,
+      "responseDays": 5,
+      "requirements": [
+        {
+          "label": "Nociones de redes",
+          "kind": "knowledge",
+          "skills": [
+            "Redes"
+          ],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-ciberes-ciber-r1"
+        },
+        {
+          "label": "Fundamentos de seguridad",
+          "kind": "knowledge",
+          "skills": [
+            "Seguridad"
+          ],
+          "essential": true,
+          "trainable": true,
+          "id": "demo-ciberes-ciber-r2"
+        },
+        {
+          "label": "Competencias digitales",
+          "kind": "knowledge",
+          "skills": [
+            "Competencias digitales"
+          ],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-ciberes-ciber-r3"
+        },
+        {
+          "label": "Desplazamientos ocasionales por la ciudad",
+          "kind": "condition",
+          "skills": [],
+          "essential": true,
+          "trainable": false,
+          "id": "demo-ciberes-ciber-r4"
+        }
+      ],
+      "closesInDays": 16
+    }
+  ],
+  "declineReasons": [
+    "Hemos elegido un perfil con más experiencia en uno de los requisitos",
+    "La vacante ya está cubierta",
+    "Necesitamos a alguien con disponibilidad distinta (horario, turnos o incorporación)",
+    "Buscamos un nivel más alto en alguno de los conocimientos imprescindibles",
+    "Otro motivo (te lo explicaremos si nos escribes)"
+  ]
+}
