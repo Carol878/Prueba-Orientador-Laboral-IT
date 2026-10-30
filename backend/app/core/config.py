@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     jwt_secret: str = DEFAULT_JWT_SECRET
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 120
-    cors_origins: str = "http://localhost:5173,https://carol878.github.io"
+    cors_origins: str = "http://localhost:5173,https://orientador.fad.es,https://carol878.github.io"
     retention_days: int = 365
 
     @property
