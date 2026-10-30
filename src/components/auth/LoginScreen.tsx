@@ -2,11 +2,14 @@
  * @file LoginScreen.tsx
  * @description Pantalla de acceso: elección de perfil (Jóvenes / Empresas) con giro 3D de tarjeta
  * que revela el formulario de inicio de sesión, sobre un fondo animado que se carga en diferido.
+ *
+ * En móvil las tarjetas son compactas (sin la lista de ventajas) para que los dos botones
+ * "Soy joven" y "Soy empresa" se vean sin desplazarse en una pantalla de 360 × 780.
  */
 
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent, MouseEvent as ReactMouseEvent, ReactNode } from 'react';
-import { ArrowLeft, ArrowRight, Eye, EyeOff, LoaderCircle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Eye, EyeOff, Gift, HandCoins, LoaderCircle, ShieldCheck } from 'lucide-react';
 import { authService } from '../../auth/authService';
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from '../../auth/demoAccounts';
 import type { UserRole, UserSession } from '../../types';
@@ -17,12 +20,18 @@ import fadLogoUrl from '../../assets/brand/fad-juventud-light.png';
 const LoginBackdrop = lazy(() => import('./LoginBackdrop'));
 
 const BACKDROP_STORAGE_KEY = 'it_orientador_login_backdrop';
-const DESKTOP_QUERY = '(min-width: 768px)';
 const FLIP_MS = 600;
 
 const BACKDROP_OPTIONS: { value: BackdropVariant; label: string }[] = [
   { value: 'network', label: 'Red' },
   { value: 'gradient', label: 'Degradado' }
+];
+
+/** Franja de confianza bajo el titular. */
+const TRUST_SEALS = [
+  { icon: Gift, label: 'Gratuito' },
+  { icon: HandCoins, label: 'Sin comisiones' },
+  { icon: ShieldCheck, label: 'Fundación Fad Juventud' }
 ];
 
 interface RoleCardContent {
@@ -38,7 +47,7 @@ const ROLE_CARDS: RoleCardContent[] = [
   {
     role: 'young',
     title: 'Jóvenes y candidatos',
-    description: 'Para ti, si buscas tu primer trabajo o vienes de otro sector y quieres cambiar de rumbo.',
+    description: 'Si buscas tu primer trabajo o vienes de otro sector y quieres cambiar de rumbo.',
     features: ['Descubre lo que ya sabes hacer', 'Tu plan paso a paso y tu CV', 'Ofertas con el salario a la vista', 'Practica entrevistas de trabajo', 'Cursos recomendados para ti'],
     cta: 'Soy joven',
     accessLabel: 'Acceso · Jóvenes'
@@ -46,7 +55,7 @@ const ROLE_CARDS: RoleCardContent[] = [
   {
     role: 'company',
     title: 'Empresas y organizaciones',
-    description: 'Encontrad talento joven de forma ética: contacto directo con las personas candidatas, sin intermediarios ni comisiones.',
+    description: 'Talento joven de forma ética: contacto directo con las personas candidatas, sin intermediarios ni comisiones.',
     features: ['Publicad vacantes con el salario visible', 'Candidaturas anónimas hasta abrir el contacto', 'Cifras de impacto de vuestras contrataciones'],
     cta: 'Soy empresa',
     accessLabel: 'Acceso · Empresas'
@@ -63,25 +72,7 @@ function readStoredBackdrop(): BackdropVariant {
   }
 }
 
-/** Indica si el viewport es de escritorio (≥768px). */
-function useIsDesktop(): boolean {
-  const [isDesktop, setIsDesktop] = useState<boolean>(() =>
-    typeof window !== 'undefined' && window.matchMedia(DESKTOP_QUERY).matches
-  );
-
-  useEffect(() => {
-    const mql = window.matchMedia(DESKTOP_QUERY);
-    const onChange = (e: MediaQueryListEvent): void => setIsDesktop(e.matches);
-    mql.addEventListener('change', onChange);
-    return () => mql.removeEventListener('change', onChange);
-  }, []);
-
-  return isDesktop;
-}
-
 export default function LoginScreen({ onLogin }: { onLogin: (user: UserSession) => void }) {
-  const isDesktop = useIsDesktop();
-
   // Perfil del formulario. Se conserva mientras la tarjeta gira de vuelta para que no "salte" el contenido.
   const [formRole, setFormRole] = useState<UserRole | null>(null);
   const [isFlipped, setIsFlipped] = useState<boolean>(false);
@@ -193,9 +184,9 @@ export default function LoginScreen({ onLogin }: { onLogin: (user: UserSession) 
     }
   };
 
-  // En escritorio gira la tarjeta contraria (la elegida queda a la vista); en móvil, la propia.
-  const flippedSlot: UserRole | null =
-    formRole === null ? null : isDesktop ? (formRole === 'young' ? 'company' : 'young') : formRole;
+  // Gira siempre la tarjeta elegida: el formulario aparece donde se ha pulsado, también en escritorio.
+  // En escritorio la otra tarjeta se atenúa, pero sigue a mano para cambiar de perfil.
+  const flippedSlot: UserRole | null = formRole;
   const demoEmail = DEMO_ACCOUNTS.find(account => account.role === formRole)?.email;
   const formCard = ROLE_CARDS.find(card => card.role === formRole);
 
@@ -207,14 +198,14 @@ export default function LoginScreen({ onLogin }: { onLogin: (user: UserSession) 
       </div>
 
       <h2 className="font-display font-bold text-2xl tracking-[-0.015em] text-fg">Iniciar sesión</h2>
-      <p className="text-sm text-fg-2 mt-1 mb-6">Introduce tus datos para acceder a tu panel.</p>
+      <p className="text-body text-fg-2 mt-1 mb-6">Introduce tus datos para acceder a tu panel.</p>
 
       {authError && (
         <div
           role="alert"
-          className="mb-4 p-3 border border-danger/40 border-l-2 border-l-danger bg-danger-soft rounded text-danger text-sm"
+          className="alert alert-danger mb-4"
         >
-          {authError}
+          <p>{authError}</p>
         </div>
       )}
 
@@ -269,7 +260,7 @@ export default function LoginScreen({ onLogin }: { onLogin: (user: UserSession) 
       </form>
 
       {demoEmail && (
-        <div className="mt-6 pt-4 border-t border-line text-xs text-fg-3 leading-relaxed">
+        <div className="mt-6 pt-4 border-t border-line text-meta text-fg-2 leading-relaxed">
           <p>
             Cuenta de prueba: <span className="text-fg font-medium break-all">{demoEmail}</span>
           </p>
@@ -282,7 +273,7 @@ export default function LoginScreen({ onLogin }: { onLogin: (user: UserSession) 
               setAuthEmail(demoEmail);
               setAuthPassword(DEMO_PASSWORD);
             }}
-            className="mt-2 min-h-9 text-xs text-accent-strong hover:underline cursor-pointer block text-left"
+            className="mt-1 min-h-11 text-meta font-semibold text-accent-strong underline underline-offset-2 cursor-pointer block text-left"
           >
             Rellenar automáticamente con la cuenta de prueba
           </button>
@@ -292,7 +283,7 @@ export default function LoginScreen({ onLogin }: { onLogin: (user: UserSession) 
   );
 
   const faceBase =
-    'card-technical bg-surface p-6 md:p-8 flex flex-col [grid-area:1/1] [backface-visibility:hidden] ' +
+    'card-technical bg-surface p-5 md:p-8 flex flex-col [grid-area:1/1] [backface-visibility:hidden] ' +
     'motion-reduce:transition-opacity motion-reduce:duration-200';
 
   return (
@@ -301,35 +292,53 @@ export default function LoginScreen({ onLogin }: { onLogin: (user: UserSession) 
         <LoginBackdrop variant={backdrop} focus={isFlipped ? formRole : null} />
       </Suspense>
 
-      <div className="relative z-10 max-w-5xl mx-auto px-4 py-12 md:py-20">
+      <div className="relative z-10 max-w-5xl mx-auto px-4 pt-6 pb-10 md:py-20">
 
-        {/* Encabezado institucional */}
-        <header className="mb-10 md:mb-14 max-w-3xl">
+        {/* Encabezado: titular para la persona joven y el texto institucional como subtítulo.
+            El velo (fondo del lienzo al 70 % con borde difuminado) evita que la red del fondo cruce el texto. */}
+        <header className="relative mb-5 md:mb-12 max-w-3xl">
+          <div
+            className="absolute -inset-x-4 -inset-y-3 md:-inset-x-8 md:-inset-y-6 -z-10 rounded-dialog bg-canvas/70 shadow-[0_0_40px_24px_color-mix(in_srgb,var(--color-canvas)_70%,transparent)]"
+            aria-hidden="true"
+          />
           <img
             src={fadLogoUrl}
             alt="Fundación Fad Juventud"
             width={136}
             height={97}
-            className="w-[136px] h-auto mb-8"
+            className="w-[84px] md:w-[136px] h-auto mb-4 md:mb-8"
           />
-          <h1 className="font-display font-bold text-[34px] md:text-[44px] leading-[1.05] tracking-[-0.015em] text-fg mb-4">
-            Sistema integrado de orientación y empleabilidad
+          <h1 className="font-display font-bold text-[27px] md:text-[44px] leading-[1.08] tracking-[-0.015em] text-fg mb-3 md:mb-4">
+            Tu primer empleo, con un plan y sin intermediarios
           </h1>
-          <p className="text-base text-fg-2 leading-relaxed max-w-2xl">
+          <p className="text-body md:text-lead text-fg-2 leading-relaxed max-w-2xl">
             Una iniciativa de Fundación Fad Juventud para acompañar a jóvenes hacia su primer empleo
             y conectar a las organizaciones con talento joven y personas que cambian de sector.
           </p>
+          <ul className="mt-4 md:mt-6 flex flex-wrap items-center gap-x-4 gap-y-1.5" aria-label="Garantías">
+            {TRUST_SEALS.map(seal => (
+              <li key={seal.label} className="flex items-center gap-1.5 text-meta md:text-body font-semibold text-fg-2">
+                <seal.icon className="w-4 h-4 text-fg-3 shrink-0" aria-hidden="true" />
+                {seal.label}
+              </li>
+            ))}
+          </ul>
         </header>
 
         {/* Tarjetas de perfil con giro 3D */}
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid md:grid-cols-2 gap-3 md:gap-4">
           {ROLE_CARDS.map(card => {
             const flipped = isFlipped && flippedSlot === card.role;
             const hasBack = flippedSlot === card.role;
             const selected = isFlipped && formRole === card.role && !flipped;
+            // La tarjeta no elegida se atenúa mientras la otra muestra el formulario.
+            const dimmed = isFlipped && formRole !== null && formRole !== card.role;
 
             return (
-              <div key={card.role} className="[perspective:1400px]">
+              <div
+                key={card.role}
+                className="[perspective:1400px]"
+              >
                 <div
                   className={
                     'grid h-full [transform-style:preserve-3d] transition-transform duration-[600ms] ' +
@@ -344,14 +353,17 @@ export default function LoginScreen({ onLogin }: { onLogin: (user: UserSession) 
                     className={
                       faceBase +
                       (flipped ? ' pointer-events-none motion-reduce:opacity-0' : ' motion-reduce:opacity-100') +
-                      (selected ? ' border-accent shadow-[inset_0_2px_0_var(--color-accent)]' : '')
+                      (selected ? ' border-accent shadow-[inset_0_2px_0_var(--color-accent)]' : '') +
+                      // Se atenúa el contenido, no la tarjeta: el fondo animado no se transparenta.
+                      (dimmed ? ' *:opacity-55 *:transition-opacity hover:*:opacity-100 focus-within:*:opacity-100' : '')
                     }
                   >
-                    <h2 className="font-display font-bold text-xl tracking-[-0.015em] text-fg mb-2">{card.title}</h2>
-                    <p className="text-sm text-fg-2 leading-relaxed mb-5">{card.description}</p>
-                    <ul className="border-t border-line mb-8">
+                    <h2 className="font-display font-bold text-lg md:text-xl tracking-[-0.015em] text-fg mb-1 md:mb-2">{card.title}</h2>
+                    <p className="text-body text-fg-2 leading-relaxed mb-4 md:mb-5">{card.description}</p>
+                    {/* En móvil se esconde para que los dos botones se vean sin desplazarse. */}
+                    <ul className="hidden sm:block border-t border-line mb-8">
                       {card.features.map(feature => (
-                        <li key={feature} className="flex items-center gap-3 py-2.5 border-b border-line text-sm text-fg">
+                        <li key={feature} className="flex items-center gap-3 py-2.5 border-b border-line text-body text-fg">
                           <span className="w-2 h-px bg-fg-3 shrink-0" aria-hidden="true" />
                           {feature}
                         </li>
@@ -387,7 +399,7 @@ export default function LoginScreen({ onLogin }: { onLogin: (user: UserSession) 
           })}
         </div>
 
-        <footer className="mt-16 pt-5 border-t border-line flex flex-wrap justify-between gap-2 text-xs text-fg-3">
+        <footer className="mt-12 md:mt-16 pt-5 border-t border-line flex flex-wrap justify-between gap-2 text-meta text-fg-2">
           <span>Fundación Fad Juventud</span>
           <span>Orientador Laboral</span>
         </footer>
@@ -399,7 +411,7 @@ export default function LoginScreen({ onLogin }: { onLogin: (user: UserSession) 
         aria-label="Fondo de la pantalla"
         className="relative z-20 w-fit mx-auto mb-8 md:fixed md:m-0 md:bottom-[calc(env(safe-area-inset-bottom,0px)+1rem)] md:right-[calc(env(safe-area-inset-right,0px)+1rem)] flex items-center gap-2 p-1 pl-3 bg-surface border border-line rounded"
       >
-        <span className="text-xs text-fg-3">Fondo</span>
+        <span className="text-meta text-fg-2">Fondo</span>
         <div className="flex">
           {BACKDROP_OPTIONS.map(option => {
             const active = backdrop === option.value;
@@ -410,7 +422,7 @@ export default function LoginScreen({ onLogin }: { onLogin: (user: UserSession) 
                 aria-pressed={active}
                 onClick={() => handleBackdropChange(option.value)}
                 className={
-                  'min-h-8 px-3 text-xs rounded transition-colors ' +
+                  'min-h-11 px-3 text-meta rounded transition-colors ' +
                   (active ? 'bg-raised text-fg' : 'text-fg-3 hover:text-fg')
                 }
               >
