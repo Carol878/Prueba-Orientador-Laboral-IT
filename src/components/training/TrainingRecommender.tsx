@@ -159,7 +159,7 @@ export default function TrainingRecommender({ userEmail, knownSkills, planGapSki
               return (
                 <span
                   key={skill}
-                  className={`inline-flex items-center gap-1 px-2 py-1 border rounded-[2px] bg-raised text-xs ${
+                  className={`inline-flex items-center gap-1 px-2 py-1 border rounded bg-raised text-xs ${
                     isKnown ? 'border-ok text-ok' : 'border-gap text-gap'
                   }`}
                 >
@@ -241,7 +241,7 @@ export default function TrainingRecommender({ userEmail, knownSkills, planGapSki
                       {course.skillsCovered.map(skill => (
                         <li
                           key={skill}
-                          className={`px-2 py-0.5 border rounded-[2px] text-xs ${
+                          className={`px-2 py-0.5 border rounded text-xs ${
                             gapSkills.includes(skill)
                               ? 'bg-gap-soft border-gap text-gap'
                               : 'bg-raised border-line-strong text-fg-2'
@@ -255,7 +255,7 @@ export default function TrainingRecommender({ userEmail, knownSkills, planGapSki
 
                   <div className={`flex flex-col gap-3 ${isFeatured ? 'mt-5 md:mt-0' : 'mt-5'}`}>
                     {course.certificationIssuer && (
-                      <p className="px-2.5 py-2 border border-cert border-l-2 rounded-[2px] bg-raised">
+                      <p className="px-2.5 py-2 border border-cert border-l-2 rounded bg-raised">
                         <span className="block text-xs font-semibold text-cert">
                           {CERTIFICATION_LABELS[course.certificationIssuer]}
                         </span>
@@ -265,7 +265,7 @@ export default function TrainingRecommender({ userEmail, knownSkills, planGapSki
                       </p>
                     )}
 
-                    <dl className="grid grid-cols-3 border border-line divide-x divide-line rounded-[2px]">
+                    <dl className="grid grid-cols-3 border border-line divide-x divide-line rounded">
                       <div className="p-2">
                         <dt className="text-xs text-fg-3">Formato</dt>
                         <dd className="text-xs font-semibold text-fg">{course.modality}</dd>

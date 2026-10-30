@@ -667,7 +667,7 @@ export default function App() {
               <section className="card-technical p-6 mb-4">
                 <p className="eyebrow mb-1">El puesto que buscas</p>
                 <h3 className="font-display font-bold text-2xl tracking-[-0.015em] text-fg mb-5">{ROLE_DATABASE[targetRole].name}</h3>
-                <dl className="grid sm:grid-cols-3 border border-line divide-y sm:divide-y-0 sm:divide-x divide-line rounded-[2px]">
+                <dl className="grid sm:grid-cols-3 border border-line divide-y sm:divide-y-0 sm:divide-x divide-line rounded">
                   <div className="p-4">
                     <dt className="label-tech">Ofertas de empleo</dt>
                     <dd className="font-semibold text-ok">{ROLE_DATABASE[targetRole].marketDemand}</dd>
@@ -720,7 +720,7 @@ export default function App() {
                     {mustHaveStatus.map(({ req, hasIt }) => (
                       <li
                         key={req}
-                        className={`px-3 py-2 rounded-[2px] text-sm flex justify-between items-center gap-3 border ${
+                        className={`px-3 py-2 rounded text-sm flex justify-between items-center gap-3 border ${
                           hasIt ? 'border-line text-fg-2' : 'border-gap/40 border-l-2 border-l-gap bg-gap-soft text-fg'
                         }`}
                       >
@@ -921,7 +921,7 @@ export default function App() {
                       </span>
                       <time className="text-fg-3">{msg.time}</time>
                     </p>
-                    <p className={`p-3 rounded-[2px] text-sm leading-relaxed whitespace-pre-line border ${
+                    <p className={`p-3 rounded text-sm leading-relaxed whitespace-pre-line border ${
                       msg.sender === 'user'
                         ? 'bg-accent-soft border-accent/25 text-fg'
                         : 'bg-raised border-line border-l-2 border-l-accent text-fg'

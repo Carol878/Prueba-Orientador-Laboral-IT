@@ -125,7 +125,7 @@ export default function CompanyPanel({ user, onLogout }: CompanyPanelProps) {
 
         <div className="flex-1 px-4 py-8 md:p-10 max-w-6xl mx-auto w-full animate-enter" key={`${tab}-${selectedOfferId ?? ''}-${editingOffer?.id ?? ''}`}>
           {loadError && (
-            <div role="alert" className="mb-4 p-3 border border-danger/30 border-l-2 border-l-danger bg-danger-soft rounded-[2px] text-danger text-sm flex flex-wrap items-center justify-between gap-3">
+            <div role="alert" className="mb-4 p-3 border border-danger/30 border-l-2 border-l-danger bg-danger-soft rounded text-danger text-sm flex flex-wrap items-center justify-between gap-3">
               <span>{loadError}</span>
               <button type="button" onClick={() => reload()} className="btn btn-secondary">Reintentar</button>
             </div>

@@ -15,7 +15,7 @@ export default function OffersNotice({ count, onOpen }: OffersNoticeProps) {
   return (
     <section
       role="status"
-      className="mb-8 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gap-soft border border-gap/40 border-l-2 border-l-gap rounded-[2px]"
+      className="mb-8 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gap-soft border border-gap/40 border-l-2 border-l-gap rounded"
     >
       <p className="flex items-start gap-2 text-sm text-fg">
         <Bell className="w-4 h-4 mt-0.5 text-gap shrink-0" aria-hidden="true" />

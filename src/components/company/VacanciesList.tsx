@@ -76,12 +76,12 @@ export default function VacanciesList({ offers, applicationsByOffer, loading, no
 
       <p className="sr-only" role="status" aria-live="polite">{announcement}</p>
       {notice && (
-        <p role="status" className="mb-4 p-3 border border-ok/40 border-l-2 border-l-ok bg-ok-soft rounded-[2px] text-sm text-ok">
+        <p role="status" className="mb-4 p-3 border border-ok/40 border-l-2 border-l-ok bg-ok-soft rounded text-sm text-ok">
           {notice}
         </p>
       )}
       {error && (
-        <p role="alert" className="mb-4 p-3 border border-danger/30 border-l-2 border-l-danger bg-danger-soft rounded-[2px] text-danger text-sm">
+        <p role="alert" className="mb-4 p-3 border border-danger/30 border-l-2 border-l-danger bg-danger-soft rounded text-danger text-sm">
           {error}
         </p>
       )}

@@ -176,7 +176,7 @@ export default function OfferDeck({
 
       {/* Barra de decisión fija abajo: siempre visible, también con el zoom al 200 %. */}
       <div
-        className="sticky bottom-0 z-10 mt-4 -mx-4 px-4 py-3 md:mx-0 md:px-3 bg-surface border-t border-line-strong md:border md:rounded-[2px]"
+        className="sticky bottom-0 z-10 mt-4 -mx-4 px-4 py-3 md:mx-0 md:px-3 bg-surface border-t border-line-strong md:border md:rounded"
         role="group"
         aria-label={`Decidir sobre la oferta ${current.offer.title}`}
       >

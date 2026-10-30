@@ -212,7 +212,7 @@ export default function LoginScreen({ onLogin }: { onLogin: (user: UserSession) 
       {authError && (
         <div
           role="alert"
-          className="mb-4 p-3 border border-danger/40 border-l-2 border-l-danger bg-danger-soft rounded-[2px] text-danger text-sm"
+          className="mb-4 p-3 border border-danger/40 border-l-2 border-l-danger bg-danger-soft rounded text-danger text-sm"
         >
           {authError}
         </div>
@@ -397,7 +397,7 @@ export default function LoginScreen({ onLogin }: { onLogin: (user: UserSession) 
       <div
         role="group"
         aria-label="Fondo de la pantalla"
-        className="relative z-20 w-fit mx-auto mb-8 md:fixed md:m-0 md:bottom-[calc(env(safe-area-inset-bottom,0px)+1rem)] md:right-[calc(env(safe-area-inset-right,0px)+1rem)] flex items-center gap-2 p-1 pl-3 bg-surface border border-line rounded-[2px]"
+        className="relative z-20 w-fit mx-auto mb-8 md:fixed md:m-0 md:bottom-[calc(env(safe-area-inset-bottom,0px)+1rem)] md:right-[calc(env(safe-area-inset-right,0px)+1rem)] flex items-center gap-2 p-1 pl-3 bg-surface border border-line rounded"
       >
         <span className="text-xs text-fg-3">Fondo</span>
         <div className="flex">
@@ -410,7 +410,7 @@ export default function LoginScreen({ onLogin }: { onLogin: (user: UserSession) 
                 aria-pressed={active}
                 onClick={() => handleBackdropChange(option.value)}
                 className={
-                  'min-h-8 px-3 text-xs rounded-[2px] transition-colors ' +
+                  'min-h-8 px-3 text-xs rounded transition-colors ' +
                   (active ? 'bg-raised text-fg' : 'text-fg-3 hover:text-fg')
                 }
               >

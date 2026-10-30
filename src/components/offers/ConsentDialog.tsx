@@ -39,7 +39,7 @@ export default function ConsentDialog({ offer, busy, onAccept, onCancel }: Conse
         event.preventDefault();
         onCancel();
       }}
-      className="m-auto w-[min(36rem,calc(100vw-2rem))] max-h-[calc(100dvh-2rem)] overflow-y-auto p-0 bg-surface text-fg border border-line-strong border-t-2 border-t-accent rounded-[2px] backdrop:bg-black/70"
+      className="m-auto w-[min(36rem,calc(100vw-2rem))] max-h-[calc(100dvh-2rem)] overflow-y-auto p-0 bg-surface text-fg border border-line-strong border-t-2 border-t-accent rounded-dialog backdrop:bg-black/70"
     >
       {offer && (
         <form
@@ -73,7 +73,7 @@ export default function ConsentDialog({ offer, busy, onAccept, onCancel }: Conse
             </li>
           </ul>
 
-          <label className="mt-5 flex items-start gap-3 p-3 bg-raised border border-line-strong rounded-[2px] text-sm cursor-pointer">
+          <label className="mt-5 flex items-start gap-3 p-3 bg-raised border border-line-strong rounded text-sm cursor-pointer">
             <input
               type="checkbox"
               checked={wantsFadSupport}

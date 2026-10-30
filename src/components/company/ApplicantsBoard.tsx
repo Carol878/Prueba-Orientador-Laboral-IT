@@ -138,7 +138,7 @@ export default function ApplicantsBoard({ offer, applications, onBack }: Applica
         </button>
       </div>
 
-      <p className="mb-4 px-3 py-2 border border-accent/40 border-l-2 border-l-accent bg-accent-soft rounded-[2px] text-sm text-fg">
+      <p className="mb-4 px-3 py-2 border border-accent/40 border-l-2 border-l-accent bg-accent-soft rounded text-sm text-fg">
         <strong>La decisión siempre la toma una persona. El encaje es orientativo.</strong>
         {' '}Los perfiles son anónimos hasta que abres el contacto.
       </p>
@@ -174,7 +174,7 @@ export default function ApplicantsBoard({ offer, applications, onBack }: Applica
 
       <p className="sr-only" role="status" aria-live="polite">{announcement}</p>
       {actionError && (
-        <p role="alert" className="mb-4 p-3 border border-danger/30 border-l-2 border-l-danger bg-danger-soft rounded-[2px] text-danger text-sm">
+        <p role="alert" className="mb-4 p-3 border border-danger/30 border-l-2 border-l-danger bg-danger-soft rounded text-danger text-sm">
           {actionError}
         </p>
       )}
@@ -466,7 +466,7 @@ function DeclineDialog({ app, onCancel, onConfirm }: DeclineDialogProps) {
       aria-labelledby="decline-title"
       aria-describedby="decline-description"
       onCancel={e => { e.preventDefault(); onCancel(); }}
-      className="m-auto w-[min(32rem,calc(100vw-2rem))] p-0 bg-surface text-fg border border-line-strong border-t-2 border-t-accent rounded-[2px] backdrop:bg-black/60"
+      className="m-auto w-[min(32rem,calc(100vw-2rem))] p-0 bg-surface text-fg border border-line-strong border-t-2 border-t-accent rounded-dialog backdrop:bg-black/60"
     >
       <form
         method="dialog"

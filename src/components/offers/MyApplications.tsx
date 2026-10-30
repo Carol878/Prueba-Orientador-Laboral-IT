@@ -326,7 +326,7 @@ export default function MyApplications({
                   <p className="text-sm font-semibold text-fg mb-2">Ofertas parecidas que aún no has visto</p>
                   <ul className="space-y-1.5">
                     {similar.map(other => (
-                      <li key={other.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border border-line rounded-[2px]">
+                      <li key={other.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border border-line rounded">
                         <span className="text-sm text-fg">
                           {other.title} <span className="text-fg-2">· {other.companyName}</span>
                         </span>

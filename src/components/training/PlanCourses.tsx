@@ -79,7 +79,7 @@ export default function PlanCourses({ gaps, onSeeAll }: PlanCoursesProps) {
               <p className="text-xs text-fg-3 mb-1.5">Te ayuda con:</p>
               <ul className="flex flex-wrap gap-1.5 mb-3" aria-label="Requisitos que cubre">
                 {coveredRequirements.map(requirement => (
-                  <li key={requirement} className="px-2 py-0.5 border border-gap rounded-[2px] bg-gap-soft text-xs text-gap">
+                  <li key={requirement} className="px-2 py-0.5 border border-gap rounded bg-gap-soft text-xs text-gap">
                     {requirement}
                   </li>
                 ))}

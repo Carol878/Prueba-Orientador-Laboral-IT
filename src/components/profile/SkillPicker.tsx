@@ -76,7 +76,7 @@ export function SkillPicker({ selected, onToggle, excluded = [] }: SkillPickerPr
       </button>
 
       {showAll && (
-        <div id={panelId} className="mt-4 border border-line rounded-[2px] p-4 bg-surface">
+        <div id={panelId} className="mt-4 border border-line rounded p-4 bg-surface">
           <label htmlFor={searchId} className="label-tech">Buscar tecnología o herramienta</label>
           <div className="relative mt-2 mb-4 max-w-md">
             <Search className="w-4 h-4 text-fg-3 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />

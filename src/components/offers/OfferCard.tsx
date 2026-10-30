@@ -46,7 +46,7 @@ function RequirementRow({
   const course = state === 'missing' ? courseForRequirement(courses, requirement) : null;
 
   return (
-    <li className={`px-3 py-2.5 rounded-[2px] border text-sm ${ui.row}`}>
+    <li className={`px-3 py-2.5 rounded border text-sm ${ui.row}`}>
       <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
         <span className="text-fg font-medium">{requirement.label}</span>
         <span className={`flex items-center gap-1.5 text-xs font-semibold ${ui.tone}`}>
@@ -139,7 +139,7 @@ export default function OfferCard({ offer, fit, courses, targetRole, onToggleLea
         </span>
       </p>
 
-      <p className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-[2px] border border-line-strong bg-raised text-sm font-semibold text-fg">
+      <p className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded border border-line-strong bg-raised text-sm font-semibold text-fg">
         {fitLabel(fit)}
         {fit.essentialTotal > 0 && <span className="font-normal text-fg-2">imprescindibles</span>}
       </p>

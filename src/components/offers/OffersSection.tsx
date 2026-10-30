@@ -106,7 +106,7 @@ function PrepareNotice({
       {courses.length > 0 ? (
         <ul className="mt-3 space-y-1.5">
           {courses.map(course => (
-            <li key={course.id} className="px-3 py-2 border border-line rounded-[2px] text-sm">
+            <li key={course.id} className="px-3 py-2 border border-line rounded text-sm">
               <a
                 href={course.url}
                 target="_blank"

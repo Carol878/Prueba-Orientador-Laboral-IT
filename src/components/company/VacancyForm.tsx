@@ -270,7 +270,7 @@ export default function VacancyForm({ companyEmail, companyName, offer, onSaved,
         title={isNew ? 'Publica una vacante' : `Editar: ${offer.title}`}
         description="Las personas verán el puesto, el salario y los requisitos, y te mostrarán su interés. Tú revisas las candidaturas y decides a quién contactar."
         aside={
-          <p className="max-w-[15rem] px-3 py-2 border border-ok border-l-2 bg-ok-soft rounded-[2px] text-xs font-medium leading-relaxed text-ok">
+          <p className="max-w-[15rem] px-3 py-2 border border-ok border-l-2 bg-ok-soft rounded text-xs font-medium leading-relaxed text-ok">
             Conexión ética con talento joven · 0 % comisiones de intermediación
           </p>
         }
@@ -282,7 +282,7 @@ export default function VacancyForm({ companyEmail, companyName, offer, onSaved,
             ref={summaryRef}
             tabIndex={-1}
             role="alert"
-            className="p-4 border border-danger/30 border-l-2 border-l-danger bg-danger-soft rounded-[2px] text-sm"
+            className="p-4 border border-danger/30 border-l-2 border-l-danger bg-danger-soft rounded text-sm"
           >
             <p className="font-semibold text-danger flex items-center gap-2 mb-2">
               <AlertTriangle className="w-4 h-4" aria-hidden="true" />
@@ -526,7 +526,7 @@ export default function VacancyForm({ companyEmail, companyName, offer, onSaved,
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-3 pt-2">
           {saveError && (
-            <p role="alert" className="flex-1 p-3 border border-danger/30 border-l-2 border-l-danger bg-danger-soft rounded-[2px] text-danger text-sm">
+            <p role="alert" className="flex-1 p-3 border border-danger/30 border-l-2 border-l-danger bg-danger-soft rounded text-danger text-sm">
               {saveError}
             </p>
           )}
@@ -574,7 +574,7 @@ function RequirementEditor({ index, requirement: req, error, onChange, onRemove 
   };
 
   return (
-    <li className="border border-line-strong rounded-[2px] bg-raised/40 p-4">
+    <li className="border border-line-strong rounded bg-raised/40 p-4">
       <div className="flex items-start gap-3">
         <span className="badge-technical shrink-0 mt-8" aria-hidden="true">{index + 1}</span>
         <div className="flex-1 min-w-0 grid gap-3">

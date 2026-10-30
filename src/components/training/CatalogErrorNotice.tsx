@@ -15,7 +15,7 @@ interface CatalogErrorNoticeProps {
 
 export default function CatalogErrorNotice({ error, onRetry }: CatalogErrorNoticeProps) {
   return (
-    <div role="alert" className="p-4 border border-danger border-l-2 rounded-[2px] bg-danger-soft">
+    <div role="alert" className="p-4 border border-danger border-l-2 rounded bg-danger-soft">
       <p className="flex items-start gap-2 text-sm font-semibold text-fg mb-1">
         <AlertTriangle className="w-4 h-4 text-danger shrink-0 mt-0.5" aria-hidden="true" />
         No se han podido cargar los cursos
