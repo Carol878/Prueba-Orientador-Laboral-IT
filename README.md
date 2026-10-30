@@ -1,7 +1,7 @@
-# Prueba Orientador Laboral IT
+# Prueba Orientador Laboral
 
-Orientación laboral para jóvenes que buscan su primer empleo en tecnología: diagnóstico, plan de acción,
-práctica de entrevistas y formación gratuita o subvencionada.
+Orientación laboral para jóvenes que buscan su primer empleo o quieren cambiar de sector: diagnóstico, plan de acción,
+ofertas de empleo con salario visible, práctica de entrevistas y formación gratuita o subvencionada.
 
 ## Puesta en marcha
 
@@ -11,9 +11,11 @@ cp .env.example .env.local   # en Windows: copy .env.example .env.local
 npm run dev
 ```
 
-## Base de datos de formación (Supabase)
+## Formación: catálogo local o Supabase
 
-Los cursos que recomienda el plan de acción se leen de la tabla `training_resources` de Supabase.
+De momento los cursos se leen de la copia local `src/data/trainingCatalogData.ts` (generada desde
+`supabase/training_resources.sql`, con los enlaces de la hoja de recursos). Para volver a leerlos de Supabase,
+pon `VITE_TRAINING_SOURCE=supabase` en `.env.local` y sigue estos pasos:
 
 1. En Supabase Studio abre **SQL Editor → New query**, pega el contenido de
    [`supabase/training_resources.sql`](supabase/training_resources.sql) y pulsa **Run**.
@@ -22,7 +24,7 @@ Los cursos que recomienda el plan de acción se leen de la tabla `training_resou
    en `.env.local`.
 3. `npm run dev` y entra como joven: en *Plan de acción* aparece el bloque **Cursos para lo que te falta**.
 
-La base de datos es la **única** fuente de cursos (no hay copia en el código). Si la conexión falla,
+Con Supabase activado, si la conexión falla,
 la web lo dice en pantalla con el motivo y un botón *Reintentar*, y la consola del navegador (F12)
 muestra el detalle con el prefijo `[formación]`:
 
@@ -54,3 +56,20 @@ npm run deploy
 ```
 
 El build incluye los valores de `.env.local`, así que hay que tenerlo en el ordenador desde el que se publica.
+
+## API en Python (backend/)
+
+API en FastAPI que sustituirá a `localStorage` para ofertas, decisiones, candidaturas y consentimiento.
+Implementa exactamente las rutas de `httpOffersService` (`src/services/offersService.ts`), con JSON en camelCase.
+
+```bash
+cd backend
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+cp .env.example .env              # cambia JWT_SECRET
+.venv/bin/python -m app.cli seed  # cuentas demo (contraseña 123456) y ofertas de ejemplo
+.venv/bin/uvicorn app.main:app --reload   # http://localhost:8000/docs
+.venv/bin/python -m pytest
+```
+
+Para que el frontend la use, define `VITE_API_URL=http://localhost:8000` en `.env.local`.
+Detalles (seguridad, conservación de 12 meses, avisos) en [`backend/README.md`](backend/README.md).

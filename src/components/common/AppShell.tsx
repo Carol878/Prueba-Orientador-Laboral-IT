@@ -127,7 +127,7 @@ export function Sidebar({ panelName, userName, userEmail, roleLabel, items, acti
         <div className="px-5 py-5 border-b border-line flex items-center gap-3">
           <img src={fadLogo} alt="Fundación Fad Juventud" width={52} height={37} className="w-[52px] h-auto shrink-0" />
           <div className="pl-3 border-l border-line">
-            <p className="font-display font-bold text-[15px] tracking-[-0.015em] text-fg leading-tight">Orientador IT</p>
+            <p className="font-display font-bold text-[15px] tracking-[-0.015em] text-fg leading-tight">Orientador Laboral</p>
             <p className="text-xs text-fg-3">{panelName}</p>
           </div>
         </div>

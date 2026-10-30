@@ -38,16 +38,16 @@ const ROLE_CARDS: RoleCardContent[] = [
   {
     role: 'young',
     title: 'Jóvenes y candidatos',
-    description: 'Para ti, si buscas tu primer trabajo en tecnología o vienes de otro sector y quieres cambiar de rumbo.',
-    features: ['Descubre lo que ya sabes hacer', 'Tu plan paso a paso y tu CV', 'Practica entrevistas de trabajo', 'Cursos recomendados para ti'],
+    description: 'Para ti, si buscas tu primer trabajo o vienes de otro sector y quieres cambiar de rumbo.',
+    features: ['Descubre lo que ya sabes hacer', 'Tu plan paso a paso y tu CV', 'Ofertas con el salario a la vista', 'Practica entrevistas de trabajo', 'Cursos recomendados para ti'],
     cta: 'Soy joven',
     accessLabel: 'Acceso · Jóvenes'
   },
   {
     role: 'company',
     title: 'Empresas y organizaciones',
-    description: 'Encontrad talento junior de forma ética: contacto directo con candidatos, sin intermediarios.',
-    features: ['Publica los perfiles que necesitáis', 'Tecnologías y habilidades que buscáis', 'Bandeja de solicitudes'],
+    description: 'Encontrad talento joven de forma ética: contacto directo con las personas candidatas, sin intermediarios ni comisiones.',
+    features: ['Publicad vacantes con el salario visible', 'Candidaturas anónimas hasta abrir el contacto', 'Cifras de impacto de vuestras contrataciones'],
     cta: 'Soy empresa',
     accessLabel: 'Acceso · Empresas'
   }
@@ -313,11 +313,11 @@ export default function LoginScreen({ onLogin }: { onLogin: (user: UserSession) 
             className="w-[136px] h-auto mb-8"
           />
           <h1 className="font-display font-bold text-[34px] md:text-[44px] leading-[1.05] tracking-[-0.015em] text-fg mb-4">
-            Sistema Integrado de Orientación & Empleabilidad IT
+            Sistema integrado de orientación y empleabilidad
           </h1>
           <p className="text-base text-fg-2 leading-relaxed max-w-2xl">
-            Una iniciativa de Fundación Fad Juventud para acompañar a jóvenes hacia su primer empleo tecnológico
-            y conectar a las organizaciones con talento junior y perfiles en reconversión.
+            Una iniciativa de Fundación Fad Juventud para acompañar a jóvenes hacia su primer empleo
+            y conectar a las organizaciones con talento joven y personas que cambian de sector.
           </p>
         </header>
 
@@ -389,7 +389,7 @@ export default function LoginScreen({ onLogin }: { onLogin: (user: UserSession) 
 
         <footer className="mt-16 pt-5 border-t border-line flex flex-wrap justify-between gap-2 text-xs text-fg-3">
           <span>Fundación Fad Juventud</span>
-          <span>Orientador Laboral IT</span>
+          <span>Orientador Laboral</span>
         </footer>
       </div>
 
