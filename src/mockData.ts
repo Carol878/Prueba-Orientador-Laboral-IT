@@ -1,19 +1,14 @@
 /**
  * @file mockData.ts
- * @description Catálogo estático de puestos, preguntas de entrevista y tecnologías disponibles.
+ * @description Catálogo estático de puestos, preguntas de entrevista y habilidades generales.
  */
 
 import type { RoleDetail, InterviewQuestion } from './types';
 
-export const AVAILABLE_TECH_STACK = [
-  'JavaScript', 'TypeScript', 'React', 'Node.js', 'Python', 
-  'Java', 'HTML/CSS', 'SQL', 'Git/GitHub', 'Docker', 
-  'Tailwind CSS', 'Express', 'Spring Boot', 'Figma'
-];
-
 /** Habilidades útiles fuera de la programación (puestos puente: datos, administración, atención al cliente…). */
 export const GENERAL_SKILLS = [
-  'Excel', 'Power BI', 'Atención al cliente', 'Ofimática', 'Redes'
+  'Atención al cliente', 'Ofimática', 'Gestión de inventario', 'Caja y cobros',
+  'Coordinación de equipos', 'Venta y asesoramiento', 'Gestión administrativa', 'Logística y almacén'
 ];
 
 export const ROLE_DATABASE: Record<string, RoleDetail> = {

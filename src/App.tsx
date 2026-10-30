@@ -53,6 +53,7 @@ import { useUnseenApplications } from './hooks/useOffers';
 import { loadYoungProfile, saveYoungProfile } from './lib/youngProfileStorage';
 import type { CandidateProfile, WorkExperience } from './types';
 import { GENERAL_SKILLS } from './mockData';
+import { SkillPicker } from './components/profile/SkillPicker';
 
 // Scroll suave (Lenis)
 import { scrollToTop, useSmoothScroll } from './lib/smoothScroll';
@@ -65,7 +66,6 @@ import type {
 
 // Importación de Base de Datos Estática
 import {
-  AVAILABLE_TECH_STACK,
   ROLE_DATABASE,
   INTERVIEW_QUESTIONS_DATABASE
 } from './mockData';
@@ -513,23 +513,7 @@ export default function App() {
 
                   <fieldset>
                     <legend className="label-tech mb-3">Tecnologías con las que ya has hecho al menos un proyecto</legend>
-                    <div className="flex flex-wrap gap-2">
-                      {AVAILABLE_TECH_STACK.map((tech) => {
-                        const isSelected = techStack.includes(tech);
-                        return (
-                          <button
-                            key={tech}
-                            type="button"
-                            aria-pressed={isSelected}
-                            onClick={() => handleTechToggle(tech)}
-                            className="chip"
-                          >
-                            {isSelected ? <Check className="w-3.5 h-3.5" aria-hidden="true" /> : <Plus className="w-3.5 h-3.5 text-fg-3" aria-hidden="true" />}
-                            {tech}
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <SkillPicker selected={techStack} onToggle={handleTechToggle} excluded={GENERAL_SKILLS} />
                   </fieldset>
 
                   {/* Habilidades útiles fuera de la programación (se guardan junto a las tecnologías) */}
