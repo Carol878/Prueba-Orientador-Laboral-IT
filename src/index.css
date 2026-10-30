@@ -114,7 +114,7 @@
      es un resultado, no un error. Fondo tenue con el modificador de opacidad: bg-stage-hired/15. */
   --color-stage-pending: #a3abba;
   --color-stage-contact: #5cc8f5;
-  --color-stage-interview: #8fa9ff;
+  --color-stage-interview: #4d7cff; /* más oscuro que contact: se distinguen también por luminosidad (daltonismo) */
   --color-stage-hired: #4fc59a;
   --color-stage-declined: #b48a86;
 
