@@ -24,6 +24,7 @@ export const supabase: SupabaseClient | null = isSupabaseConfigured
     })
   : null;
 
-if (!isSupabaseConfigured && import.meta.env.DEV) {
+// Solo avisa si se ha pedido leer los cursos de Supabase (por defecto se usa el catálogo local).
+if (!isSupabaseConfigured && import.meta.env.DEV && import.meta.env.VITE_TRAINING_SOURCE === 'supabase') {
   console.error('[supabase] Faltan VITE_SUPABASE_URL o VITE_SUPABASE_ANON_KEY en .env.local: no se podrán cargar los cursos.');
 }
