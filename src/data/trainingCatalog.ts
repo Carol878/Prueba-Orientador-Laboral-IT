@@ -89,7 +89,39 @@ export const TRAINING_PROFILES: TrainingProfile[] = [
 /** Equivalencias entre el stack del diagnóstico técnico y las skills del catálogo. */
 const SKILL_ALIASES: Record<string, string> = {
   'Git/GitHub': 'Git',
-  'Tailwind CSS': 'Tailwind'
+  'Tailwind CSS': 'Tailwind',
+  'Power BI': 'Visualización de datos',
+  'Atención al cliente': 'Comunicación',
+  'Ofimática': 'Competencias digitales',
+  'Vue.js': 'Vue',
+  'MySQL': 'SQL',
+  'MariaDB': 'SQL',
+  'SQL Server': 'SQL',
+  'SQLite': 'SQL',
+  'MongoDB': 'NoSQL',
+  'Redis': 'NoSQL',
+  'GitLab': 'Git',
+  'Excel avanzado (tablas dinámicas)': 'Excel',
+  'Pandas': 'Ciencia de datos',
+  'NumPy': 'Ciencia de datos',
+  'Tableau': 'Visualización de datos',
+  'Looker Studio': 'Visualización de datos',
+  'AWS': 'Cloud',
+  'Azure': 'Cloud',
+  'Google Cloud': 'Cloud',
+  'Jest': 'Testing',
+  'Vitest': 'Testing',
+  'Cypress': 'Testing',
+  'Playwright': 'Testing',
+  'Selenium': 'Testing',
+  'Postman': 'Testing',
+  'JUnit': 'Testing',
+  'Pytest': 'Testing',
+  'Pruebas manuales': 'Testing',
+  'Ciberseguridad': 'Seguridad',
+  'Machine Learning': 'IA',
+  'IA generativa (ChatGPT, Claude…)': 'IA',
+  'Venta y asesoramiento': 'Comunicación'
 };
 
 export function normalizeSkill(skill: string): string {

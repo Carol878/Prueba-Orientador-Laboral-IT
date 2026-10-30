@@ -15,15 +15,15 @@ interface CatalogErrorNoticeProps {
 
 export default function CatalogErrorNotice({ error, onRetry }: CatalogErrorNoticeProps) {
   return (
-    <div role="alert" className="p-4 border border-danger border-l-2 rounded-[2px] bg-danger-soft">
-      <p className="flex items-start gap-2 text-sm font-semibold text-fg mb-1">
+    <div role="alert" className="p-4 border border-danger border-l-2 rounded bg-danger-soft">
+      <p className="flex items-start gap-2 text-body font-semibold text-fg mb-1">
         <AlertTriangle className="w-4 h-4 text-danger shrink-0 mt-0.5" aria-hidden="true" />
         No se han podido cargar los cursos
       </p>
-      <p className="text-sm text-fg-2 mb-3">{error.message}</p>
+      <p className="text-body text-fg-2 mb-3">{error.message}</p>
       <details className="mb-3">
-        <summary className="text-xs text-fg-3 cursor-pointer">Detalle técnico</summary>
-        <p className="mt-2 text-xs text-fg-2 font-mono break-words">
+        <summary className="min-h-11 flex items-center text-meta text-fg-2 cursor-pointer">Detalle técnico</summary>
+        <p className="mt-2 text-caption text-fg-2 font-mono break-words">
           [{error.kind}] {error.detail}
         </p>
       </details>

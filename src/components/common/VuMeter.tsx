@@ -28,7 +28,7 @@ export default function VuMeter({ value, label, tone = 'accent' }: VuMeterProps)
     <div className="flex items-center gap-3" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label={label}>
       <div className="flex gap-[3px]" aria-hidden="true">
         {Array.from({ length: SEGMENTS }, (_, i) => (
-          <span key={i} className={`h-3 w-2 rounded-[1px] ${i < lit ? colors.on : 'bg-line-strong'}`} />
+          <span key={i} className={`h-3 w-2 rounded-sm ${i < lit ? colors.on : 'bg-line-strong'}`} />
         ))}
       </div>
       <span className={`font-sans text-[0.85rem] font-semibold tabular-nums ${colors.text}`}>

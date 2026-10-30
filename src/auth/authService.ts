@@ -9,6 +9,7 @@
 
 import type { UserSession } from '../types';
 import { demoAuthService } from './demoAuth';
+import { apiAuthService } from './apiAuth';
 
 export type AuthResult =
   | { user: UserSession; error: null }
@@ -23,5 +24,7 @@ export interface AuthService {
   getSession(): Promise<UserSession | null>;
 }
 
-// Implementación activa. Sustituir por `supabaseAuthService` cuando exista backend.
-export const authService: AuthService = demoAuthService;
+const apiUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '');
+
+// Implementación activa: la API en Python si está configurada; si no, las cuentas demo.
+export const authService: AuthService = apiUrl ? apiAuthService(apiUrl) : demoAuthService;

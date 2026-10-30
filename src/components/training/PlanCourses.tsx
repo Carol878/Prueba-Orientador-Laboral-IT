@@ -7,6 +7,8 @@
 import { useMemo } from 'react';
 import { ArrowUpRight, ChevronRight, GraduationCap, Loader2 } from 'lucide-react';
 
+import ProviderMonogram from '../young/ProviderMonogram';
+
 import { useTrainingCatalog } from '../../hooks/useTrainingCatalog';
 import CatalogErrorNotice from './CatalogErrorNotice';
 import { recommendCourses } from '../../lib/courseRecommendations';
@@ -41,8 +43,8 @@ export default function PlanCourses({ gaps, onSeeAll }: PlanCoursesProps) {
             <GraduationCap className="w-4 h-4 text-accent" aria-hidden="true" />
             Cursos para lo que te falta
           </h4>
-          <p className="text-sm text-fg-2">
-            Formación gratuita, subvencionada o con parte gratis para aprender lo que marcamos como “Empieza por aquí”.
+          <p className="text-body text-fg-2">
+            Formación gratuita, subvencionada o con parte gratis para aprender lo que te falta, empezando por el número 1.
           </p>
         </div>
         <button type="button" onClick={onSeeAll} className="btn btn-secondary">
@@ -52,40 +54,47 @@ export default function PlanCourses({ gaps, onSeeAll }: PlanCoursesProps) {
       </div>
 
       {gaps.length === 0 ? (
-        <p className="p-4 bg-ok-soft border-l-2 border-ok text-sm text-fg">
+        <p className="p-4 bg-ok-soft border-l-2 border-ok text-body text-fg">
           Ya cubres lo básico del puesto. En “Formación recomendada” puedes buscar cursos para ampliar o conseguir un certificado.
         </p>
       ) : error ? (
         <CatalogErrorNotice error={error} onRetry={retry} />
       ) : isLoading ? (
-        <p className="flex items-center gap-2 text-sm text-fg-3 py-6" role="status">
+        <p className="flex items-center gap-2 text-body text-fg-2 py-6" role="status">
           <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
           Buscando cursos para ti…
         </p>
       ) : recommendations.length === 0 ? (
-        <p className="text-sm text-fg-2 py-2">
+        <p className="text-body text-fg-2 py-2">
           Todavía no tenemos cursos en el catálogo para lo que te falta. Pregunta a tu orientador o revisa “Formación recomendada”.
         </p>
       ) : (
         <ol className="grid md:grid-cols-2 gap-3">
           {recommendations.map(({ course, coveredRequirements }, index) => (
-            <li key={course.id} className="card-technical p-4 flex flex-col">
-              <p className="text-xs font-semibold text-fg-2 mb-1">
-                <span className="text-accent-strong mr-1.5">{index + 1}.</span>
-                {course.provider}
-              </p>
+            <li key={course.id} className="p-4 flex flex-col bg-raised border border-line rounded">
+              <div className="flex items-center gap-2.5 mb-2">
+                <ProviderMonogram name={course.provider} />
+                <p className="text-meta font-semibold text-fg-2 leading-snug">
+                  <span className="sr-only">Opción {index + 1}: </span>
+                  {course.provider}
+                </p>
+              </div>
               <h5 className="font-display font-bold text-base leading-snug text-fg mb-2">{course.title}</h5>
 
-              <p className="text-xs text-fg-3 mb-1.5">Te ayuda con:</p>
+              <p className="text-meta text-fg-2 mb-1.5">Te ayuda con lo que te falta:</p>
               <ul className="flex flex-wrap gap-1.5 mb-3" aria-label="Requisitos que cubre">
                 {coveredRequirements.map(requirement => (
-                  <li key={requirement} className="px-2 py-0.5 border border-gap rounded-[2px] bg-gap-soft text-xs text-gap">
+                  <li
+                    key={requirement}
+                    className="inline-flex items-center gap-1.5 px-2 py-0.5 border border-line-strong rounded bg-surface text-meta text-fg"
+                  >
+                    <span className="dot" data-state="missing" aria-hidden="true" />
                     {requirement}
                   </li>
                 ))}
               </ul>
 
-              <p className="text-xs text-fg-2 mb-4">
+              <p className="text-meta text-fg-2 mb-4">
                 <span className={course.priceType === 'mixto' ? 'text-fg-2' : 'text-ok font-semibold'}>{course.priceLabel}</span>
                 {' · '}
                 {course.language}
@@ -97,7 +106,7 @@ export default function PlanCourses({ gaps, onSeeAll }: PlanCoursesProps) {
                 href={course.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn btn-primary mt-auto self-start"
+                className="btn btn-secondary mt-auto self-start"
               >
                 Ir a la web del curso
                 <ArrowUpRight className="w-4 h-4" aria-hidden="true" />
@@ -109,7 +118,7 @@ export default function PlanCourses({ gaps, onSeeAll }: PlanCoursesProps) {
       )}
 
       {status === 'ready' && uncovered.length > 0 && (
-        <p className="text-xs text-fg-3 mt-4">
+        <p className="text-meta text-fg-2 mt-4">
           Sin cursos en el catálogo por ahora para: {uncovered.join(', ')}.
         </p>
       )}

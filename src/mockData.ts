@@ -1,14 +1,14 @@
 /**
  * @file mockData.ts
- * @description Catálogo estático de roles IT, preguntas de entrevista y tecnologías disponibles.
+ * @description Catálogo estático de puestos, preguntas de entrevista y habilidades generales.
  */
 
 import type { RoleDetail, InterviewQuestion } from './types';
 
-export const AVAILABLE_TECH_STACK = [
-  'JavaScript', 'TypeScript', 'React', 'Node.js', 'Python', 
-  'Java', 'HTML/CSS', 'SQL', 'Git/GitHub', 'Docker', 
-  'Tailwind CSS', 'Express', 'Spring Boot', 'Figma'
+/** Habilidades útiles fuera de la programación (puestos puente: datos, administración, atención al cliente…). */
+export const GENERAL_SKILLS = [
+  'Atención al cliente', 'Ofimática', 'Gestión de inventario', 'Caja y cobros',
+  'Coordinación de equipos', 'Venta y asesoramiento', 'Gestión administrativa', 'Logística y almacén'
 ];
 
 export const ROLE_DATABASE: Record<string, RoleDetail> = {
@@ -93,19 +93,10 @@ export const INTERVIEW_QUESTIONS_DATABASE: InterviewQuestion[] = [
 ];
 
 export const COMPANY_PRESET_ROLES = [
-  'Frontend Developer', 'Backend Developer', 'Fullstack Developer', 
-  'Data Analyst / BI', 'QA Automation / Tester', 'DevOps Engineer', 
-  'UX/UI Designer', 'Mobile Developer (React Native/Flutter)'
-];
-
-export const COMPANY_PRESET_TECHS = [
-  'JavaScript', 'TypeScript', 'React', 'Node.js', 'Python', 'Java', 
-  'SQL / PostgreSQL', 'MongoDB', 'Docker', 'Git / GitHub', 'Spring Boot', 
-  'Tailwind CSS', 'AWS / Cloud', 'PowerBI'
-];
-
-export const COMPANY_PRESET_SOFT_SKILLS = [
-  'Trabajo en equipo', 'Comunicación efectiva', 'Resolución de problemas', 
-  'Adaptabilidad / Proactividad', 'Gestión del tiempo', 'Pensamiento crítico', 
-  'Capacidad de autogestión', 'Inglés fluido / técnico'
+  'Frontend Developer', 'Backend Developer', 'Fullstack Developer',
+  'Data Analyst / BI', 'QA Automation / Tester', 'DevOps Engineer',
+  'UX/UI Designer', 'Mobile Developer (React Native/Flutter)',
+  // Puestos puente (no técnicos o de entrada)
+  'Atención al cliente', 'Administrativo/a', 'Auxiliar de almacén',
+  'Soporte técnico', 'Analista de datos'
 ];

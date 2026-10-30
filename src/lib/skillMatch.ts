@@ -21,7 +21,25 @@ const SKILL_PATTERNS: Record<string, RegExp[]> = {
   'Tailwind CSS': [/\btailwind\b/],
   'Express': [/\bexpress\b/],
   'Spring Boot': [/\bspring\b/],
-  'Figma': [/\bfigma\b/]
+  'Figma': [/\bfigma\b/],
+  'Power BI': [/\bpower ?bi\b/],
+  'Vue.js': [/\bvue\b/],
+  'Next.js': [/\bnext(\.js)?\b/],
+  'PostgreSQL': [/\bsql\b/, /\bpostgres/],
+  'MySQL': [/\bsql\b/],
+  'MariaDB': [/\bsql\b/],
+  'SQL Server': [/\bsql\b/],
+  'SQLite': [/\bsql\b/],
+  'MongoDB': [/\bnosql\b/, /\bmongo/],
+  'Redis': [/\bnosql\b/],
+  'GitLab': [/\bgit\b/],
+  'Excel avanzado (tablas dinámicas)': [/\bexcel\b/],
+  'Pandas': [/\bpandas\b/],
+  'Tableau': [/\btableau\b/],
+  'JWT / OAuth': [/\bjwt\b/, /autenticaci/],
+  'C#': [/(^|[^\w])c#/],
+  'C++': [/(^|[^\w])c\+\+/],
+  '.NET': [/\.net\b/]
 };
 
 /** Patrón por defecto para tecnologías sin entrada propia: palabra completa, sin distinguir mayúsculas. */

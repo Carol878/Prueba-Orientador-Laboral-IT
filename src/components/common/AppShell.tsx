@@ -4,9 +4,9 @@
  * de jóvenes y de empresas.
  */
 
-import { useEffect, useState } from 'react';
-import type { ReactNode } from 'react';
-import { LogOut, Sparkles, Square } from 'lucide-react';
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import type { ReactNode, RefObject } from 'react';
+import { LogOut, Pause, Sparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 import fadLogo from '../../assets/brand/fad-juventud-light.png';
@@ -24,8 +24,8 @@ export interface NavItem {
 interface ShellProps {
   /** Nombre del panel, p. ej. "Panel de jóvenes". */
   panelName: string;
-  /** Icono de marca del panel. */
-  brandIcon: LucideIcon;
+  /** Icono del panel. Ya no se pinta: la cabecera móvil usa el logotipo de Fad. */
+  brandIcon?: LucideIcon;
   userName: string;
   userEmail: string;
   roleLabel: string;
@@ -33,13 +33,15 @@ interface ShellProps {
   activeId: string;
   onSelect: (id: string) => void;
   onLogout: () => void;
+  /** Muestra el selector de fondo (quieto o animado). Por defecto, sí; el portal de empresa lo oculta. */
+  showBackdropToggle?: boolean;
 }
 
 /**
  * Botón de cierre de sesión con confirmación rápida: el primer toque pide confirmar
  * y el segundo, dentro de 3 segundos, cierra la sesión.
  */
-function LogoutButton({ onLogout, compact = false }: { onLogout: () => void; compact?: boolean }) {
+function LogoutButton({ onLogout }: { onLogout: () => void }) {
   const [armed, setArmed] = useState<boolean>(false);
 
   useEffect(() => {
@@ -52,28 +54,27 @@ function LogoutButton({ onLogout, compact = false }: { onLogout: () => void; com
     <button
       type="button"
       onClick={() => (armed ? onLogout() : setArmed(true))}
-      className={`btn ${compact ? 'px-3' : 'w-full'} ${
-        armed ? 'bg-danger-soft border-danger text-danger' : 'btn-secondary text-fg-2'
-      }`}
+      className={`btn w-full ${armed ? 'btn-danger' : 'btn-secondary text-fg-2'}`}
     >
       <LogOut className="w-4 h-4" aria-hidden="true" />
-      <span aria-live="polite">{armed ? '¿Confirmar salida?' : compact ? 'Salir' : 'Cerrar sesión'}</span>
+      <span aria-live="polite">{armed ? '¿Confirmar salida?' : 'Cerrar sesión'}</span>
     </button>
   );
 }
 
-const BACKDROP_OPTIONS: { mode: PanelBackdropMode; label: string }[] = [
-  { mode: 'static', label: 'Fijo' },
-  { mode: 'live', label: 'Vivo' },
+const BACKDROP_OPTIONS: { mode: PanelBackdropMode; label: string; icon: LucideIcon }[] = [
+  { mode: 'static', label: 'Quieto', icon: Pause },
+  { mode: 'live', label: 'Animado', icon: Sparkles },
 ];
 
-/** Selector segmentado del fondo del panel (barra lateral). */
+/** Selector segmentado del fondo del panel (barra lateral y menú de cuenta en móvil). */
 function BackdropToggle() {
   const [mode, setMode] = usePanelBackdrop();
+  const labelId = useId();
   return (
-    <div role="group" aria-labelledby="backdrop-toggle-label" className="mb-3">
-      <p id="backdrop-toggle-label" className="text-xs text-fg-3 mb-1.5">Fondo</p>
-      <div className="grid grid-cols-2 gap-1 p-1 bg-surface border border-line rounded-[4px]">
+    <div role="group" aria-labelledby={labelId}>
+      <p id={labelId} className="text-sm text-fg-3 mb-1.5">Fondo del panel</p>
+      <div className="grid grid-cols-2 gap-1 p-1 bg-canvas/40 border border-line rounded">
         {BACKDROP_OPTIONS.map(opt => {
           const active = mode === opt.mode;
           return (
@@ -82,13 +83,11 @@ function BackdropToggle() {
               type="button"
               onClick={() => setMode(opt.mode)}
               aria-pressed={active}
-              className={`min-h-9 flex items-center justify-center gap-1.5 rounded-[4px] border text-xs font-medium ${
+              className={`min-h-11 flex items-center justify-center gap-1.5 rounded border text-sm font-medium ${
                 active ? 'bg-accent-soft border-accent text-accent-strong' : 'border-transparent text-fg-2 hover:border-line-strong'
               }`}
             >
-              {opt.mode === 'live'
-                ? <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
-                : <Square className="w-3.5 h-3.5" aria-hidden="true" />}
+              <opt.icon className="w-4 h-4" aria-hidden="true" />
               {opt.label}
             </button>
           );
@@ -98,43 +97,38 @@ function BackdropToggle() {
   );
 }
 
-/** Botón compacto (móvil) que alterna entre fondo fijo y animado. */
-function BackdropIconToggle() {
-  const [mode, setMode] = usePanelBackdrop();
-  const live = mode === 'live';
-  const Icon = live ? Sparkles : Square;
-  return (
-    <button
-      type="button"
-      onClick={() => setMode(live ? 'static' : 'live')}
-      aria-pressed={live}
-      aria-label={`Fondo animado: ${live ? 'activado' : 'desactivado'}`}
-      title={live ? 'Fondo animado' : 'Fondo fijo'}
-      className={`min-w-11 min-h-11 grid place-items-center rounded-[4px] border ${
-        live ? 'bg-accent-soft border-accent text-accent-strong' : 'bg-surface border-line text-fg-2'
-      }`}
-    >
-      <Icon className="w-4 h-4" aria-hidden="true" />
-    </button>
-  );
+/** Iniciales para el avatar: primera letra de las dos primeras palabras del nombre. */
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return parts.slice(0, 2).map(part => part[0]!.toUpperCase()).join('') || '?';
 }
 
 /** Barra lateral fija del panel (solo escritorio). */
-export function Sidebar({ panelName, userName, userEmail, roleLabel, items, activeId, onSelect, onLogout }: ShellProps) {
+export function Sidebar({
+  panelName,
+  userName,
+  userEmail,
+  roleLabel,
+  items,
+  activeId,
+  onSelect,
+  onLogout,
+  showBackdropToggle = true,
+}: ShellProps) {
   return (
-    <aside className="w-64 sticky top-0 h-dvh bg-surface border-r border-line hidden md:flex flex-col justify-between shrink-0">
+    <aside className="w-64 sticky top-0 h-dvh overflow-y-auto bg-surface border-r border-line hidden md:flex flex-col justify-between shrink-0">
       <div>
         <div className="px-5 py-5 border-b border-line flex items-center gap-3">
           <img src={fadLogo} alt="Fundación Fad Juventud" width={52} height={37} className="w-[52px] h-auto shrink-0" />
           <div className="pl-3 border-l border-line">
-            <p className="font-display font-bold text-[15px] tracking-[-0.015em] text-fg leading-tight">Orientador IT</p>
-            <p className="text-xs text-fg-3">{panelName}</p>
+            <p className="font-display font-bold text-[15px] tracking-[-0.015em] text-fg leading-tight">Orientador Laboral</p>
+            <p className="text-sm text-fg-3">{panelName}</p>
           </div>
         </div>
 
         <div className="mx-4 my-4 card p-3">
           <p className="text-sm font-semibold text-fg truncate">{userName}</p>
-          <p className="text-xs text-fg-3 truncate mt-0.5">{userEmail}</p>
+          <p className="text-meta text-fg-3 truncate mt-0.5">{userEmail}</p>
           <span className="badge-technical mt-2">{roleLabel}</span>
         </div>
 
@@ -154,8 +148,8 @@ export function Sidebar({ panelName, userName, userEmail, roleLabel, items, acti
         </nav>
       </div>
 
-      <div className="p-4 border-t border-line">
-        <BackdropToggle />
+      <div className="p-4 border-t border-line space-y-3">
+        {showBackdropToggle && <BackdropToggle />}
         <LogoutButton onLogout={onLogout} />
       </div>
     </aside>
@@ -176,7 +170,7 @@ export function PageHeader({ eyebrow, title, description, aside }: PageHeaderPro
     <div className="mb-8 pb-5 border-b border-line flex flex-col sm:flex-row sm:items-end justify-between gap-4">
       <div className="max-w-2xl">
         <p className="eyebrow mb-2">{eyebrow}</p>
-        <h2 className="font-display font-bold text-2xl md:text-[28px] leading-tight tracking-[-0.015em] text-fg">{title}</h2>
+        <h2 className="font-display font-bold text-2xl md:text-heading leading-tight tracking-[-0.015em] text-fg">{title}</h2>
         {description && <p className="text-sm text-fg-2 mt-2 leading-relaxed">{description}</p>}
       </div>
       {aside && <div className="shrink-0">{aside}</div>}
@@ -184,30 +178,154 @@ export function PageHeader({ eyebrow, title, description, aside }: PageHeaderPro
   );
 }
 
-/** Cabecera fija con pestañas desplazables (solo móvil). */
-export function MobileHeader({ panelName, brandIcon: BrandIcon, items, activeId, onSelect, onLogout }: ShellProps) {
+/** Alto de la fila de marca de la cabecera móvil (h-13 = 52 px); es lo que se recoge al bajar. */
+const BRAND_ROW_PX = 52;
+
+/**
+ * Recoge la fila de marca al desplazarse hacia abajo y la devuelve al subir un poco.
+ * Devuelve el estado y un setter para mostrarla de nuevo (p. ej. al recibir foco).
+ */
+function useCollapseOnScroll(): [boolean, (value: boolean) => void] {
+  const [collapsed, setCollapsed] = useState<boolean>(false);
+
+  useEffect(() => {
+    let lastY = window.scrollY;
+    let frame = 0;
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        const y = window.scrollY;
+        if (y <= BRAND_ROW_PX) setCollapsed(false);
+        else if (y > lastY + 6) setCollapsed(true);
+        else if (y < lastY - 6) setCollapsed(false);
+        else return; // movimiento mínimo: se conserva la referencia para acumular
+        lastY = y;
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.cancelAnimationFrame(frame);
+    };
+  }, []);
+
+  return [collapsed, setCollapsed];
+}
+
+/**
+ * Marca los bordes de una fila desplazable que esconden contenido (data-fade-start / data-fade-end),
+ * para que `.scroll-fade-x` pinte el fundido. Escribe en el DOM sin renderizar de nuevo.
+ */
+function useScrollFades(ref: RefObject<HTMLElement | null>): () => void {
+  const update = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    el.toggleAttribute('data-fade-start', el.scrollLeft > 2);
+    el.toggleAttribute('data-fade-end', el.scrollLeft < max - 2);
+  }, [ref]);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => {
+      el.removeEventListener('scroll', update);
+      observer.disconnect();
+    };
+  }, [ref, update]);
+
+  return update;
+}
+
+/**
+ * Cabecera fija (solo móvil): fila de marca con el logotipo y el menú de cuenta, y fila de pestañas
+ * desplazables. Al bajar por la página la fila de marca se recoge y solo quedan las pestañas.
+ */
+export function MobileHeader({
+  panelName,
+  userName,
+  userEmail,
+  roleLabel,
+  items,
+  activeId,
+  onSelect,
+  onLogout,
+  showBackdropToggle = true,
+}: ShellProps) {
+  const navRef = useRef<HTMLElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuId = useId();
+  const [collapsed, setCollapsed] = useCollapseOnScroll();
+  const updateFades = useScrollFades(navRef);
+
+  // La pestaña activa siempre a la vista, centrada en la fila (sin mover la página en vertical).
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    const active = nav?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!nav || !active) return;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    nav.scrollTo({
+      left: active.offsetLeft - (nav.clientWidth - active.offsetWidth) / 2,
+      behavior: reduced ? 'auto' : 'smooth',
+    });
+    updateFades();
+  }, [activeId, updateFades]);
+
+  // Si la fila de marca se recoge con el menú abierto, se cierra para no dejarlo flotando.
+  useEffect(() => {
+    if (collapsed && menuRef.current?.matches(':popover-open')) menuRef.current.hidePopover();
+  }, [collapsed]);
+
   return (
-    <header className="sticky top-0 z-10 bg-surface border-b border-line md:hidden">
-      <div className="px-4 py-2 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="w-7 h-7 grid place-items-center bg-accent text-on-accent rounded-[2px] shrink-0">
-            <BrandIcon className="w-4 h-4" aria-hidden="true" />
-          </div>
-          <p className="font-display font-bold text-sm text-fg truncate">{panelName}</p>
+    <header
+      className={`sticky top-0 z-20 bg-surface border-b border-line md:hidden transition-[translate] duration-200 ease-out motion-reduce:transition-none ${
+        collapsed ? '-translate-y-13' : ''
+      }`}
+    >
+      {/* Con foco de teclado en la fila de marca, se vuelve a mostrar. */}
+      <div className="h-13 pl-4 pr-2 flex items-center justify-between gap-3" onFocus={() => setCollapsed(false)}>
+        <div className="flex items-center gap-3 min-w-0">
+          <img src={fadLogo} alt="Fundación Fad Juventud" width={39} height={28} className="h-7 w-auto shrink-0" />
+          <p className="pl-3 border-l border-line font-display font-bold text-sm text-fg truncate">{panelName}</p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <BackdropIconToggle />
-          <LogoutButton onLogout={onLogout} compact />
+        <button
+          type="button"
+          popoverTarget={menuId}
+          aria-label={`Tu cuenta y ajustes: ${userName}`}
+          className="btn btn-ghost btn-icon shrink-0"
+        >
+          <span
+            aria-hidden="true"
+            className="w-8 h-8 grid place-items-center rounded-full bg-accent-soft border border-accent/50 text-accent-strong text-meta font-bold"
+          >
+            {initialsOf(userName)}
+          </span>
+        </button>
+      </div>
+
+      <div ref={menuRef} id={menuId} popover="auto" className="menu-popover">
+        <p className="text-sm font-semibold text-fg truncate">{userName}</p>
+        <p className="text-meta text-fg-3 truncate mt-0.5">{userEmail}</p>
+        <span className="badge-technical mt-2">{roleLabel}</span>
+        <div className="mt-4 pt-4 border-t border-line space-y-3">
+          {showBackdropToggle && <BackdropToggle />}
+          <LogoutButton onLogout={onLogout} />
         </div>
       </div>
-      <nav className="flex overflow-x-auto px-2" aria-label="Secciones del panel">
+
+      <nav ref={navRef} className="scroll-fade-x flex overflow-x-auto px-1" aria-label="Secciones del panel">
         {items.map(item => (
           <button
             key={item.id}
             type="button"
             onClick={() => onSelect(item.id)}
             aria-current={activeId === item.id ? 'page' : undefined}
-            className={`shrink-0 min-h-11 flex items-center gap-1.5 px-3 border-b-2 text-xs font-medium ${
+            className={`shrink-0 min-h-11 flex items-center gap-1.5 px-3 border-b-2 text-sm font-medium ${
               activeId === item.id ? 'border-accent text-accent-strong' : 'border-transparent text-fg-2'
             }`}
           >
