@@ -1,8 +1,9 @@
 /**
  * @file trainingRepository.ts
- * @description Lectura de los recursos de formación desde Supabase (tabla `training_resources`).
+ * @description Lectura de los recursos de formación.
  *
- * La base de datos es la ÚNICA fuente de cursos: no hay copia local de respaldo. Si algo falla,
+ * De momento la fuente es la copia local (`trainingCatalogData.ts`). Con `VITE_TRAINING_SOURCE=supabase`
+ * en `.env.local` se leen de la tabla `training_resources` de Supabase. Si algo falla,
  * se devuelve un error con el motivo concreto para que se vea en pantalla y en la consola,
  * y así saber exactamente dónde está el problema de conexión.
  *
@@ -12,6 +13,7 @@
 
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
 import { PRICE_LABELS } from './trainingCatalog';
+import { LOCAL_TRAINING_CATALOG } from './trainingCatalogData';
 import type {
   TrainingCategory,
   TrainingCourse,
@@ -132,11 +134,18 @@ async function loadFromSupabase(): Promise<TrainingCatalogResult> {
   return { ok: true, courses };
 }
 
+/** `true` solo si se pide expresamente leer de Supabase. */
+const useSupabase = import.meta.env.VITE_TRAINING_SOURCE === 'supabase';
+
+async function loadFromLocal(): Promise<TrainingCatalogResult> {
+  return { ok: true, courses: LOCAL_TRAINING_CATALOG };
+}
+
 let cached: Promise<TrainingCatalogResult> | null = null;
 
-/** Devuelve el catálogo desde Supabase. Nunca lanza: los fallos llegan como `{ ok: false }`. */
+/** Devuelve el catálogo (local o Supabase). Nunca lanza: los fallos llegan como `{ ok: false }`. */
 export function fetchTrainingCatalog(): Promise<TrainingCatalogResult> {
-  cached ??= loadFromSupabase()
+  cached ??= (useSupabase ? loadFromSupabase() : loadFromLocal())
     .catch((unexpected: unknown) =>
       failure('network', 'No se ha podido contactar con la base de datos.', String(unexpected))
     )
