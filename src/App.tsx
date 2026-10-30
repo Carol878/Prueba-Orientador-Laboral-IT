@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   ArrowRight,
-  Briefcase,
-  Building2,
   Check,
   CheckCircle2,
   ChevronRight,
@@ -37,10 +35,24 @@ import AmbientBackground from './components/common/AmbientBackground';
 import TrainingRecommender from './components/training/TrainingRecommender';
 import PlanCourses from './components/training/PlanCourses';
 
+// Panel de empresas: vacantes, candidaturas e impacto
+import CompanyPanel from './components/company/CompanyPanel';
+
 // Comparación de tecnologías con los requisitos del puesto
 import { coversRequirement } from './lib/skillMatch';
 import { gapSkillList, planGaps } from './lib/courseRecommendations';
 import { scoreAnswer } from './lib/answerScore';
+
+// Ofertas de empleo y perfil del joven (diagnóstico ampliado, guardado por email)
+import { Briefcase as OffersIcon } from 'lucide-react';
+import OffersSection from './components/offers/OffersSection';
+import type { OffersView } from './components/offers/OffersSection';
+import OffersNotice from './components/offers/OffersNotice';
+import { PortfolioFields, WorkExperienceFields } from './components/profile/WorkExperienceFields';
+import { useUnseenApplications } from './hooks/useOffers';
+import { loadYoungProfile, saveYoungProfile } from './lib/youngProfileStorage';
+import type { CandidateProfile, WorkExperience } from './types';
+import { GENERAL_SKILLS } from './mockData';
 
 // Scroll suave (Lenis)
 import { scrollToTop, useSmoothScroll } from './lib/smoothScroll';
@@ -48,7 +60,6 @@ import { scrollToTop, useSmoothScroll } from './lib/smoothScroll';
 // Importación de Tipos e Interfaces
 import type {
   UserSession,
-  CompanyData,
   InterviewFeedback
 } from './types';
 
@@ -56,10 +67,7 @@ import type {
 import {
   AVAILABLE_TECH_STACK,
   ROLE_DATABASE,
-  INTERVIEW_QUESTIONS_DATABASE,
-  COMPANY_PRESET_ROLES,
-  COMPANY_PRESET_TECHS,
-  COMPANY_PRESET_SOFT_SKILLS
+  INTERVIEW_QUESTIONS_DATABASE
 } from './mockData';
 
 // ============================================================================
@@ -71,6 +79,7 @@ const YOUNG_NAV: NavItem[] = [
   { id: 'welcome', label: 'Inicio y perfil', shortLabel: 'Inicio', icon: Compass },
   { id: 'diagnostic', label: 'Diagnóstico de tu perfil', shortLabel: 'Diagnóstico', icon: Layers },
   { id: 'roadmap', label: 'Plan de acción y CV', shortLabel: 'Plan & CV', icon: TrendingUp },
+  { id: 'offers', label: 'Ofertas', shortLabel: 'Ofertas', icon: OffersIcon },
   { id: 'interview', label: 'Simulador de entrevista', shortLabel: 'Entrevista', icon: Terminal },
   { id: 'ask', label: 'Consultas al mentor', shortLabel: 'Mentor', icon: MessageSquare },
   { id: 'training', label: 'Formación recomendada', shortLabel: 'Formación', icon: GraduationCap }
@@ -137,6 +146,82 @@ export default function App() {
   const [experienceMonths, setExperienceMonths] = useState<string>('0-6');
   const [mainBlocker, setMainBlocker] = useState<string>('cv');
 
+  // Perfil ampliado para las ofertas: lo que está aprendiendo, experiencia laboral y portfolio
+  const [learningSkills, setLearningSkills] = useState<string[]>([]);
+  const [workExperience, setWorkExperience] = useState<WorkExperience[]>([]);
+  const [portfolioUrl, setPortfolioUrl] = useState<string>('');
+  const [mainProject, setMainProject] = useState<string>('');
+  const [practicedInterview, setPracticedInterview] = useState<boolean>(false);
+  const [offersView, setOffersView] = useState<OffersView>('deck');
+  /** Email cuyo perfil guardado ya se ha cargado (evita sobrescribirlo con los valores por defecto). */
+  const [profileLoadedFor, setProfileLoadedFor] = useState<string | null>(null);
+
+  const youngEmail = currentUser?.role === 'young' ? currentUser.email : null;
+  const unseenApplications = useUnseenApplications(youngEmail);
+
+  // Al entrar un joven, recupera su perfil guardado en este navegador.
+  useEffect(() => {
+    if (!youngEmail) return;
+    const saved = loadYoungProfile(youngEmail);
+    setProfileTypeYoung(saved.profileType);
+    setTargetRole(ROLE_DATABASE[saved.targetRole] ? saved.targetRole : 'frontend');
+    setTechStack(saved.techStack);
+    setLearningSkills(saved.learningSkills);
+    setEnglishLevel(saved.englishLevel);
+    setExperienceMonths(saved.experienceMonths);
+    setMainBlocker(saved.mainBlocker);
+    setWorkExperience(saved.workExperience);
+    setPortfolioUrl(saved.portfolioUrl);
+    setMainProject(saved.mainProject);
+    setPracticedInterview(saved.practicedInterview);
+    setProfileLoadedFor(youngEmail);
+  }, [youngEmail]);
+
+  // Guarda el perfil cada vez que cambia (solo después de haberlo cargado).
+  useEffect(() => {
+    if (!youngEmail || profileLoadedFor !== youngEmail) return;
+    saveYoungProfile(youngEmail, {
+      profileType: profileTypeYoung === 'junior' || profileTypeYoung === 'reskill' ? profileTypeYoung : null,
+      targetRole,
+      techStack,
+      learningSkills,
+      englishLevel,
+      experienceMonths,
+      mainBlocker,
+      workExperience,
+      portfolioUrl,
+      mainProject,
+      practicedInterview
+    });
+  }, [youngEmail, profileLoadedFor, profileTypeYoung, targetRole, techStack, learningSkills, englishLevel, experienceMonths, mainBlocker, workExperience, portfolioUrl, mainProject, practicedInterview]);
+
+  /** Perfil que se envía a la empresa con "Me interesa" (sin nombre ni email visibles hasta abrir el contacto). */
+  const candidateProfile = useMemo<CandidateProfile | null>(() => {
+    if (!currentUser || currentUser.role !== 'young') return null;
+    return {
+      email: currentUser.email,
+      name: currentUser.name,
+      profileType: profileTypeYoung === 'junior' || profileTypeYoung === 'reskill' ? profileTypeYoung : null,
+      targetRole: ROLE_DATABASE[targetRole]?.name ?? targetRole,
+      techStack,
+      learningSkills,
+      englishLevel,
+      experienceMonths,
+      // Solo las experiencias con algo escrito.
+      workExperience: workExperience.filter(item => item.role.trim() || item.tasks.trim()),
+      portfolioUrl: portfolioUrl.trim(),
+      mainProject: mainProject.trim(),
+      practicedInterview
+    };
+  }, [currentUser, profileTypeYoung, targetRole, techStack, learningSkills, englishLevel, experienceMonths, workExperience, portfolioUrl, mainProject, practicedInterview]);
+
+  /** Marca (o desmarca) habilidades como "Lo estoy aprendiendo". */
+  const handleToggleLearning = (skills: string[], learning: boolean): void => {
+    setLearningSkills(prev =>
+      learning ? [...new Set([...prev, ...skills])] : prev.filter(skill => !skills.includes(skill))
+    );
+  };
+
   // Simulador de Entrevista Técnica
   const [interviewRole, setInterviewRole] = useState<string>('frontend');
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState<number>(0);
@@ -164,40 +249,8 @@ export default function App() {
   // 3. ESTADOS Y PERSISTENCIA DEL PANEL DE EMPRESAS
   // ============================================================================
 
-  const [companyTab, setCompanyTab] = useState<'form' | 'submissions'>('form');
-  const [companyName, setCompanyName] = useState<string>('');
-  const [companyEmail, setCompanyEmail] = useState<string>('');
-  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
-  const [selectedTechSkills, setSelectedTechSkills] = useState<string[]>([]);
-  const [customTechInput, setCustomTechInput] = useState<string>('');
-  const [selectedSoftSkills, setSelectedSoftSkills] = useState<string[]>([]);
-  const [customSoftInput, setCustomSoftInput] = useState<string>('');
-  const [companySubmitted, setCompanySubmitted] = useState<boolean>(false);
-  const [companyFormError, setCompanyFormError] = useState<string>('');
-
-  /**
-   * Lista de empresas registradas. Se inicializa leyendo 'registered_companies_data' de LocalStorage.
-   */
-  const [companiesData, setCompaniesData] = useState<CompanyData[]>(() => {
-    try {
-      const savedData = localStorage.getItem('registered_companies_data');
-      return savedData ? JSON.parse(savedData) : [];
-    } catch (error) {
-      console.error('Error al cargar datos de empresas:', error);
-      return [];
-    }
-  });
-
-  /**
-   * Sincronización automática de `companiesData` con LocalStorage cada vez que se actualiza.
-   */
-  useEffect(() => {
-    try {
-      localStorage.setItem('registered_companies_data', JSON.stringify(companiesData));
-    } catch (error) {
-      console.error('Error guardando en el almacenamiento local:', error);
-    }
-  }, [companiesData]);
+  // El panel de empresas (vacantes, candidaturas e impacto) gestiona su propio estado en
+  // `components/company/CompanyPanel.tsx` y guarda los datos con `offersService`.
 
   // ============================================================================
   // 4. MANEJO DE SESIÓN Y AUTENTICACIÓN
@@ -209,7 +262,6 @@ export default function App() {
   const handleLogout = async (): Promise<void> => {
     await authService.signOut();
     setCurrentUser(null);
-    setCompanySubmitted(false);
   };
 
   // ============================================================================
@@ -248,6 +300,7 @@ export default function App() {
       const keyPoints = filteredQuestions[currentQuestionIdx]?.keyPoints || [];
       const { score, covered, missing } = scoreAnswer(userAnswer, keyPoints);
       setIsEvaluating(false);
+      setPracticedInterview(true);
       setInterviewFeedback({
         score,
         strengths: covered.length > 0
@@ -302,84 +355,6 @@ export default function App() {
   };
 
   // ============================================================================
-  // 6. MÉTODOS DEL MÓDULO DE EMPRESAS
-  // ============================================================================
-
-  const toggleCompanyRole = (role: string): void => {
-    setSelectedRoles(prev => prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]);
-  };
-
-  const toggleTechSkill = (skill: string): void => {
-    setSelectedTechSkills(prev => prev.includes(skill) ? prev.filter(s => s !== skill) : [...prev, skill]);
-  };
-
-  const addCustomTech = (): void => {
-    const trimmed = customTechInput.trim();
-    if (trimmed && !selectedTechSkills.includes(trimmed)) {
-      setSelectedTechSkills(prev => [...prev, trimmed]);
-      setCustomTechInput('');
-    }
-  };
-
-  const toggleSoftSkill = (skill: string): void => {
-    setSelectedSoftSkills(prev => prev.includes(skill) ? prev.filter(s => s !== skill) : [...prev, skill]);
-  };
-
-  const addCustomSoft = (): void => {
-    const trimmed = customSoftInput.trim();
-    if (trimmed && !selectedSoftSkills.includes(trimmed)) {
-      setSelectedSoftSkills(prev => [...prev, trimmed]);
-      setCustomSoftInput('');
-    }
-  };
-
-  /**
-   * Guarda los datos introducidos por la empresa y activa la confirmación.
-   * Los errores de validación se muestran en línea sobre el botón de envío.
-   */
-  const handleCompanyFormSubmit = (e: React.FormEvent): void => {
-    e.preventDefault();
-    setCompanyFormError('');
-
-    if (!companyName.trim() || !companyEmail.trim()) {
-      setCompanyFormError('Indica el nombre de la organización y un correo de contacto.');
-      return;
-    }
-
-    if (selectedRoles.length === 0 || selectedTechSkills.length === 0) {
-      setCompanyFormError('Selecciona al menos un puesto y una habilidad técnica requerida.');
-      return;
-    }
-
-    const newCompanyEntry: CompanyData = {
-      id: Date.now().toString(),
-      companyName: companyName.trim(),
-      contactEmail: companyEmail.trim(),
-      neededRoles: selectedRoles,
-      techSkills: selectedTechSkills,
-      softSkills: selectedSoftSkills,
-      createdAt: new Date().toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      })
-    };
-
-    setCompaniesData(prev => [...prev, newCompanyEntry]);
-    setCompanySubmitted(true);
-  };
-
-  const handleResetCompanyForm = (): void => {
-    setCompanyName('');
-    setCompanyEmail('');
-    setSelectedRoles([]);
-    setSelectedTechSkills([]);
-    setSelectedSoftSkills([]);
-    setCompanyFormError('');
-    setCompanySubmitted(false);
-  };
-
-  // ============================================================================
   // 7. SCROLL SUAVE
   // ============================================================================
   useSmoothScroll();
@@ -387,7 +362,7 @@ export default function App() {
   // Cada pestaña o vista nueva empieza arriba, como una página nueva.
   useEffect(() => {
     scrollToTop();
-  }, [currentUser, activeTabYoung, companyTab]);
+  }, [currentUser, activeTabYoung]);
 
   // ============================================================================
   // RENDER: CARGA DE SESIÓN
@@ -417,12 +392,18 @@ export default function App() {
       userName: currentUser.name,
       userEmail: currentUser.email,
       roleLabel: 'Joven talento',
-      items: YOUNG_NAV,
+      // El menú "Ofertas" muestra cuántas candidaturas tienen respuestas sin ver.
+      items: YOUNG_NAV.map(item =>
+        item.id === 'offers' && unseenApplications > 0
+          ? { ...item, label: `Ofertas (${unseenApplications})`, shortLabel: `Ofertas (${unseenApplications})` }
+          : item
+      ),
       activeId: activeTabYoung,
       onSelect: setActiveTabYoung,
       onLogout: handleLogout
     };
     const currentQuestion = filteredQuestions[currentQuestionIdx];
+    const filledJobs = workExperience.filter(item => item.role.trim()).length;
 
     return (
       <div className="flex min-h-dvh bg-ambient text-fg">
@@ -439,6 +420,11 @@ export default function App() {
                 eyebrow="Orientación laboral personalizada"
                 title="Da el paso hacia tu primer empleo en tecnología"
                 description="Si te está costando encontrar tu primer trabajo, aquí te acompañamos. Descubre en qué punto estás, qué conocimientos piden las empresas y practica entrevistas antes de la de verdad."
+              />
+
+              <OffersNotice
+                count={unseenApplications}
+                onOpen={() => { setOffersView('applications'); setActiveTabYoung('offers'); }}
               />
 
               <h3 className="label-tech mb-3">Paso 1 · Elige tu punto de partida</h3>
@@ -546,6 +532,38 @@ export default function App() {
                     </div>
                   </fieldset>
 
+                  {/* Habilidades útiles fuera de la programación (se guardan junto a las tecnologías) */}
+                  <fieldset>
+                    <legend className="label-tech mb-1">Otras habilidades que ya usas en el trabajo o en tu día a día</legend>
+                    <p className="text-sm text-fg-2 mb-3">Muchas empresas las piden y también abren puertas en tecnología.</p>
+                    <div className="flex flex-wrap gap-2">
+                      {GENERAL_SKILLS.map((skill) => {
+                        const isSelected = techStack.includes(skill);
+                        return (
+                          <button
+                            key={skill}
+                            type="button"
+                            aria-pressed={isSelected}
+                            onClick={() => handleTechToggle(skill)}
+                            className="chip"
+                          >
+                            {isSelected ? <Check className="w-3.5 h-3.5" aria-hidden="true" /> : <Plus className="w-3.5 h-3.5 text-fg-3" aria-hidden="true" />}
+                            {skill}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </fieldset>
+
+                  <WorkExperienceFields value={workExperience} onChange={setWorkExperience} />
+
+                  <PortfolioFields
+                    portfolioUrl={portfolioUrl}
+                    mainProject={mainProject}
+                    onPortfolioUrlChange={setPortfolioUrl}
+                    onMainProjectChange={setMainProject}
+                  />
+
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>
                       <label htmlFor="english-level" className="label-tech">Tu nivel de inglés</label>
@@ -563,17 +581,21 @@ export default function App() {
                     </div>
 
                     <div>
-                      <label htmlFor="experience" className="label-tech">Tu experiencia práctica</label>
+                      <label htmlFor="experience" className="label-tech">Tu práctica con proyectos de tecnología</label>
                       <select
                         id="experience"
                         value={experienceMonths}
                         onChange={(e) => setExperienceMonths(e.target.value)}
+                        aria-describedby="experience-hint"
                         className="input-technical"
                       >
-                        <option value="0-6">Solo proyectos de clase o del curso (0–6 meses)</option>
-                        <option value="6-12">Proyectos propios y prácticas (6–12 meses)</option>
-                        <option value="12+">Más de 1 año haciendo proyectos por mi cuenta</option>
+                        <option value="0-6">Proyectos de clase o del curso (0–6 meses)</option>
+                        <option value="6-12">Proyectos propios o prácticas (6–12 meses)</option>
+                        <option value="12+">Más de 1 año con proyectos de tecnología</option>
                       </select>
+                      <p id="experience-hint" className="text-xs text-fg-2 mt-1.5">
+                        Solo lo que has hecho con tecnología. Tu experiencia en otros trabajos va en «Experiencia laboral» y cuenta igual.
+                      </p>
                     </div>
                   </div>
 
@@ -620,8 +642,14 @@ export default function App() {
                       <dd className="text-fg">{englishLevel}</dd>
                     </div>
                     <div className="py-2 flex justify-between gap-3">
-                      <dt className="text-fg-3">Experiencia</dt>
+                      <dt className="text-fg-3">Práctica en tecnología</dt>
                       <dd className="text-fg text-right">{EXPERIENCE_LABELS[experienceMonths]}</dd>
+                    </div>
+                    <div className="py-2 flex justify-between gap-3">
+                      <dt className="text-fg-3">Experiencia laboral</dt>
+                      <dd className="text-fg text-right">
+                        {filledJobs === 0 ? 'Sin añadir' : `${filledJobs} ${filledJobs === 1 ? 'puesto' : 'puestos'}`}
+                      </dd>
                     </div>
                     <div className="py-2 flex justify-between gap-3">
                       <dt className="text-fg-3">Lo que te frena</dt>
@@ -939,6 +967,21 @@ export default function App() {
             </div>
           )}
 
+          {/* TAB: OFERTAS Y CANDIDATURAS */}
+          {activeTabYoung === 'offers' && candidateProfile && (
+            <OffersSection
+              candidate={candidateProfile}
+              targetRole={targetRole}
+              view={offersView}
+              onViewChange={setOffersView}
+              onToggleLearning={handleToggleLearning}
+              onPracticeInterview={(roleKey) => {
+                if (roleKey && ROLE_DATABASE[roleKey]) changeInterviewRole(roleKey);
+                setActiveTabYoung('interview');
+              }}
+            />
+          )}
+
           {/* TAB 6: RECOMENDADOR DE FORMACIÓN */}
           {activeTabYoung === 'training' && (
             <TrainingRecommender userEmail={currentUser.email} knownSkills={techStack} planGapSkills={planGapSkills} />
@@ -952,281 +995,5 @@ export default function App() {
   // ============================================================================
   // RENDER: MÓDULO DE EMPRESAS (ACCESO AUTENTICADO BLOQUEADO POR ROL)
   // ============================================================================
-  const companyShell = {
-    panelName: 'Portal de empresas',
-    brandIcon: Building2,
-    userName: currentUser.name,
-    userEmail: currentUser.email,
-    roleLabel: 'Organización',
-    items: [
-      { id: 'form', label: 'Formulario de necesidades', shortLabel: 'Formulario', icon: FileText },
-      { id: 'submissions', label: `Solicitudes registradas (${companiesData.length})`, shortLabel: `Solicitudes (${companiesData.length})`, icon: Layers }
-    ],
-    activeId: companyTab,
-    onSelect: (id: string) => setCompanyTab(id === 'submissions' ? 'submissions' : 'form'),
-    onLogout: handleLogout
-  };
-
-  return (
-    <div className="flex min-h-dvh bg-ambient text-fg">
-      <AmbientBackground />
-      <Sidebar {...companyShell} />
-
-      <main className="flex-1 flex flex-col min-w-0">
-        <MobileHeader {...companyShell} />
-
-        {companyTab === 'form' ? (
-          <div className="flex-1 px-4 py-8 md:p-10 max-w-5xl mx-auto w-full animate-enter">
-
-            {companySubmitted ? (
-              /* MENSAJE EXACTO SOLICITADO */
-              <section className="card-technical p-8 max-w-2xl mx-auto my-8 text-center">
-                <div className="w-12 h-12 grid place-items-center mx-auto mb-5 border border-ok text-ok rounded-[2px]">
-                  <CheckCircle2 className="w-6 h-6" aria-hidden="true" />
-                </div>
-                <h3 className="font-display font-bold text-2xl tracking-[-0.015em] text-fg mb-4">
-                  ¡Registro Completado Exitosamente!
-                </h3>
-                <p className="text-fg text-base leading-relaxed mb-8 bg-ok-soft p-4 border-l-2 border-ok text-left">
-                  "¡Gracias por registrar las necesidades de tu empresa! Si encontramos un perfil que se adapte a lo que buscas, te pondremos en aviso de inmediato."
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <button type="button" onClick={handleResetCompanyForm} className="btn btn-primary">
-                    Registrar otra vacante o necesidad
-                  </button>
-                  <button type="button" onClick={() => setCompanyTab('submissions')} className="btn btn-secondary">
-                    Ver solicitudes guardadas
-                  </button>
-                </div>
-              </section>
-            ) : (
-              /* FORMULARIO DINÁMICO DE EMPRESA */
-              <div>
-                <PageHeader
-                  eyebrow="Talento joven y personas que cambian de sector"
-                  title="Cuéntanos qué perfiles necesitas"
-                  description="Indica los puestos, tecnologías y habilidades que más necesita tu organización para que podamos encontrar los perfiles adecuados."
-                  aside={
-                    <p className="max-w-[15rem] px-3 py-2 border border-ok border-l-2 bg-ok-soft rounded-[2px] text-xs font-medium leading-relaxed text-ok">
-                      Captación ética de talento joven · 0% comisiones de intermediación
-                    </p>
-                  }
-                />
-
-                <form onSubmit={handleCompanyFormSubmit} className="space-y-4" noValidate>
-
-                  {/* BLOQUE 1: DATOS ORGANIZACIÓN */}
-                  <fieldset className="card p-6">
-                    <legend className="sr-only">Información de la organización</legend>
-                    <h3 className="label-tech flex items-center gap-2 mb-4" aria-hidden="true">
-                      <Building2 className="w-4 h-4 text-accent" />
-                      Información de la organización
-                    </h3>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor="company-name" className="label-tech">Nombre de la organización *</label>
-                        <input
-                          id="company-name"
-                          type="text"
-                          required
-                          value={companyName}
-                          onChange={(e) => setCompanyName(e.target.value)}
-                          placeholder="Ej. Talleres Digitales del Norte S.L."
-                          className="input-technical"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="company-email" className="label-tech">Correo de RRHH / selección *</label>
-                        <input
-                          id="company-email"
-                          type="email"
-                          required
-                          autoCapitalize="none"
-                          value={companyEmail}
-                          onChange={(e) => setCompanyEmail(e.target.value)}
-                          placeholder="reclutamiento@empresa.com"
-                          className="input-technical"
-                        />
-                      </div>
-                    </div>
-                  </fieldset>
-
-                  {/* BLOQUE 2: PUESTOS NECESARIOS */}
-                  <fieldset className="card p-6">
-                    <legend className="sr-only">Puestos más necesarios</legend>
-                    <h3 className="label-tech flex items-center gap-2 mb-1" aria-hidden="true">
-                      <Briefcase className="w-4 h-4 text-accent" />
-                      Puestos que más necesita tu organización *
-                    </h3>
-                    <p className="text-sm text-fg-2 mb-4">Selecciona los puestos que quieres cubrir ahora.</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
-                      {COMPANY_PRESET_ROLES.map((role) => {
-                        const isSelected = selectedRoles.includes(role);
-                        return (
-                          <button
-                            key={role}
-                            type="button"
-                            aria-pressed={isSelected}
-                            onClick={() => toggleCompanyRole(role)}
-                            className="option font-medium flex items-center justify-between gap-2"
-                          >
-                            <span>{role}</span>
-                            {isSelected && <Check className="w-4 h-4 text-accent shrink-0" aria-hidden="true" />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </fieldset>
-
-                  {/* BLOQUE 3: HABILIDADES TÉCNICAS */}
-                  <fieldset className="card p-6">
-                    <legend className="sr-only">Habilidades técnicas más necesarias</legend>
-                    <h3 className="label-tech flex items-center gap-2 mb-1" aria-hidden="true">
-                      <Code className="w-4 h-4 text-accent" />
-                      Habilidades técnicas más necesarias *
-                    </h3>
-                    <p className="text-sm text-fg-2 mb-4">Marca las tecnologías imprescindibles o añade las tuyas.</p>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {[...COMPANY_PRESET_TECHS, ...selectedTechSkills.filter(t => !COMPANY_PRESET_TECHS.includes(t))].map((tech) => {
-                        const isSelected = selectedTechSkills.includes(tech);
-                        return (
-                          <button key={tech} type="button" aria-pressed={isSelected} onClick={() => toggleTechSkill(tech)} className="chip">
-                            {isSelected ? <Check className="w-3.5 h-3.5" aria-hidden="true" /> : <Plus className="w-3.5 h-3.5 text-fg-3" aria-hidden="true" />}
-                            {tech}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <div className="flex gap-2">
-                      <label htmlFor="custom-tech" className="sr-only">Otra tecnología</label>
-                      <input
-                        id="custom-tech"
-                        type="text"
-                        value={customTechInput}
-                        onChange={(e) => setCustomTechInput(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomTech(); } }}
-                        placeholder="Otra tecnología (ej. GraphQL, Kubernetes…)"
-                        className="input-technical flex-1"
-                      />
-                      <button type="button" onClick={addCustomTech} className="btn btn-secondary">
-                        <Plus className="w-4 h-4" aria-hidden="true" />
-                        Añadir
-                      </button>
-                    </div>
-                  </fieldset>
-
-                  {/* BLOQUE 4: HABILIDADES BLANDAS */}
-                  <fieldset className="card p-6">
-                    <legend className="sr-only">Habilidades personales más valoradas</legend>
-                    <h3 className="label-tech flex items-center gap-2 mb-1" aria-hidden="true">
-                      <Sparkles className="w-4 h-4 text-accent" />
-                      Habilidades personales más valoradas
-                    </h3>
-                    <p className="text-sm text-fg-2 mb-4">Indica qué cualidades personales valoras más (trabajo en equipo, comunicación…).</p>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {[...COMPANY_PRESET_SOFT_SKILLS, ...selectedSoftSkills.filter(s => !COMPANY_PRESET_SOFT_SKILLS.includes(s))].map((soft) => {
-                        const isSelected = selectedSoftSkills.includes(soft);
-                        return (
-                          <button key={soft} type="button" aria-pressed={isSelected} onClick={() => toggleSoftSkill(soft)} className="chip">
-                            {isSelected ? <Check className="w-3.5 h-3.5" aria-hidden="true" /> : <Plus className="w-3.5 h-3.5 text-fg-3" aria-hidden="true" />}
-                            {soft}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <div className="flex gap-2">
-                      <label htmlFor="custom-soft" className="sr-only">Otra habilidad personal</label>
-                      <input
-                        id="custom-soft"
-                        type="text"
-                        value={customSoftInput}
-                        onChange={(e) => setCustomSoftInput(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomSoft(); } }}
-                        placeholder="Otra habilidad personal…"
-                        className="input-technical flex-1"
-                      />
-                      <button type="button" onClick={addCustomSoft} className="btn btn-secondary">
-                        <Plus className="w-4 h-4" aria-hidden="true" />
-                        Añadir
-                      </button>
-                    </div>
-                  </fieldset>
-
-                  <div className="flex flex-col items-end gap-3 pt-2">
-                    {companyFormError && (
-                      <p role="alert" className="w-full p-3 border border-danger/30 border-l-2 border-l-danger bg-danger-soft rounded-[2px] text-danger text-sm">
-                        {companyFormError}
-                      </p>
-                    )}
-                    <button type="submit" className="btn btn-primary">
-                      <Send className="w-4 h-4" aria-hidden="true" />
-                      Registrar necesidades de la empresa
-                    </button>
-                  </div>
-
-                </form>
-              </div>
-            )}
-
-          </div>
-        ) : (
-          /* LISTADO DE SOLICITUDES GUARDADAS */
-          <div className="flex-1 px-4 py-8 md:p-10 max-w-5xl mx-auto w-full animate-enter">
-            <PageHeader
-              eyebrow="Tus solicitudes"
-              title="Solicitudes guardadas"
-              description="Se guardan solo en este navegador."
-              aside={
-                <button type="button" onClick={() => setCompanyTab('form')} className="btn btn-primary">
-                  <Plus className="w-4 h-4" aria-hidden="true" />
-                  Nueva solicitud
-                </button>
-              }
-            />
-
-            {companiesData.length === 0 ? (
-              <div className="card p-8 text-center text-sm text-fg-2">
-                Aún no has registrado ninguna solicitud de empresa.
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {companiesData.map((data, idx) => (
-                  <article key={data.id} className="card-technical">
-                    <header className="px-5 py-4 border-b border-line flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <h4 className="font-display font-bold text-lg tracking-[-0.015em] text-fg">{data.companyName}</h4>
-                        <p className="text-xs text-fg-3 truncate">{data.contactEmail}</p>
-                      </div>
-                      <div className="flex flex-wrap gap-2 shrink-0">
-                        <span className="badge-technical">Solicitud {idx + 1}</span>
-                        <span className="badge-technical">{data.createdAt}</span>
-                      </div>
-                    </header>
-
-                    <dl className="divide-y divide-line text-sm">
-                      {[
-                        { label: 'Puestos buscados', values: data.neededRoles },
-                        { label: 'Habilidades técnicas', values: data.techSkills },
-                        { label: 'Habilidades blandas', values: data.softSkills }
-                      ].filter(row => row.values.length > 0).map(row => (
-                        <div key={row.label} className="px-5 py-3 grid sm:grid-cols-[180px_1fr] gap-2">
-                          <dt className="label-tech mb-0 pt-1">{row.label}</dt>
-                          <dd className="flex flex-wrap gap-1.5">
-                            {row.values.map(value => (
-                              <span key={value} className="px-2 py-1 border border-line-strong rounded-[2px] bg-raised text-fg text-xs">{value}</span>
-                            ))}
-                          </dd>
-                        </div>
-                      ))}
-                    </dl>
-                  </article>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-      </main>
-    </div>
-  );
+  return <CompanyPanel user={currentUser} onLogout={handleLogout} />;
 }
