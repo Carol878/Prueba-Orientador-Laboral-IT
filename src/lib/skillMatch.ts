@@ -21,7 +21,8 @@ const SKILL_PATTERNS: Record<string, RegExp[]> = {
   'Tailwind CSS': [/\btailwind\b/],
   'Express': [/\bexpress\b/],
   'Spring Boot': [/\bspring\b/],
-  'Figma': [/\bfigma\b/]
+  'Figma': [/\bfigma\b/],
+  'Power BI': [/\bpower ?bi\b/]
 };
 
 /** Patrón por defecto para tecnologías sin entrada propia: palabra completa, sin distinguir mayúsculas. */

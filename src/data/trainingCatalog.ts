@@ -89,7 +89,10 @@ export const TRAINING_PROFILES: TrainingProfile[] = [
 /** Equivalencias entre el stack del diagnóstico técnico y las skills del catálogo. */
 const SKILL_ALIASES: Record<string, string> = {
   'Git/GitHub': 'Git',
-  'Tailwind CSS': 'Tailwind'
+  'Tailwind CSS': 'Tailwind',
+  'Power BI': 'Visualización de datos',
+  'Atención al cliente': 'Comunicación',
+  'Ofimática': 'Competencias digitales'
 };
 
 export function normalizeSkill(skill: string): string {
